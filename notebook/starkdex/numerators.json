@@ -1,6 +1,6 @@
 {
   "1": "false",
-  "(point^(trace_length / 16384) - trace_generator^(31 * trace_length / 32)) * (point^(trace_length / 16384) - trace_generator^(15 * trace_length / 16))": "",
+  "(point^(trace_length / 16384) - trace_generator^(31 * trace_length / 32)) * (point^(trace_length / 16384) - trace_generator^(15 * trace_length / 16))": "i % 16384 == 16384 / 32 * 31 || i % 16384 == 16384 / 16 * 15",
   "point - trace_generator^(65536 * (trace_length / 65536 - 1) + 49152)": "i == trace_length - 65536 + 49152",
   "point^(trace_length / 1024) - trace_generator^(255 * trace_length / 256)": "i % 1024 == 1024 / 256 * 255",
   "point^(trace_length / 16384) - trace_generator^(255 * trace_length / 256)": "i % 16384 == 16384 / 256 * 255",

@@ -94,6 +94,7 @@ fn test_trace_table() {
         let sig_verify__exponentiate_generator__bit_neg =
             FieldElement::ONE - &sig_verify__exponentiate_generator__bit;
 
+        // periodic columns
         let merkle_hash_points__x = FieldElement::ONE;
         let merkle_hash_points__y = FieldElement::ONE;
         let hash_pool_points__y = FieldElement::ONE;
