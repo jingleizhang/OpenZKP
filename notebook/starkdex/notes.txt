@@ -1,4 +1,4 @@
-column0: ecc_point x (this is used at the slope value.)
+column0: ecc_point x (this is used at the hash value.)
 column1: ecc_point y
 column2: ecc_point slope
 column3: pedersen sum? pretty sure this is true.
