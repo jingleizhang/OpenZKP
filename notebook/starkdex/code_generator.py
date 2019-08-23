@@ -16,4 +16,5 @@ with open("bases.txt") as f:
     bases = [line[:-1] for line in f.readlines()]
 
 for base, numerator, denominator in zip(bases, numerators, denominators):
-    print "if (%s) && !(%s) {assert_eq!(%s, FieldElement::ZERO);}" % (denominator, numerator, base)
+    print "if (%s) && !(%s) {assert_eq!(%s, FieldElement::ZERO);}" % (
+        denominator, numerator, base)

@@ -8,7 +8,7 @@ column 5: ecc_point y
 column6: sometimes this is a slope, othertimes it is being used a marker for something else?
 column7: accumulator for above.
 
-column8:
+column8: there's a third pedersen hash here, where x and y points are interleaved. computes one hash every 2048 rows. 0-3 and 4-7 compute one every 512 rows, so this supports the idea that all 4 rows have been interleaved.
 column9: this is being used for everything else.....
 
 Masons-MacBook-Pro:starkdex mason$ git grep denominator | sort | uniq | wc

@@ -5,6 +5,20 @@ use starkdex::{PEDERSEN_POINTS, SHIFT_POINT};
 use std::prelude::v1::*;
 use u256::U256;
 
+struct Row {
+    hasher_a: HashRow,      // Columns 0-3
+    hasher_b: HashRow,      // Columns 4-7
+    hasher_c: FieldElement, // Column 8
+    mystery:  FieldElement, // Column 9
+}
+
+struct HashRow {
+    source: FieldElement,
+    slope:  FieldElement,
+    x:      FieldElement,
+    y:      FieldElement,
+}
+
 fn get_trace_table() -> TraceTable {
     let num_columns = 10;
     let num_rows = 2usize.pow(15);
@@ -24,9 +38,97 @@ struct Point {
     pub y: FieldElement,
 }
 
+fn test_trace_table_hash_pool(trace_table: &TraceTable, i: usize) {
+    let state_transition__merkle_update__prev_authentication__hashes__ec_subset_sum__bit =
+        FieldElement::ZERO;
+    let state_transition__merkle_update__prev_authentication__hashes__ec_subset_sum__bit_neg =
+        FieldElement::ONE
+            - &state_transition__merkle_update__prev_authentication__hashes__ec_subset_sum__bit;
+
+    let shift_point = Point {
+        x: FieldElement::ONE,
+        y: FieldElement::ONE,
+    };
+
+    let merkle_hash_points__x = FieldElement::ONE;
+    let merkle_hash_points__y = FieldElement::ONE;
+
+    if (true) && !(i % 256 == 255) {
+        assert_eq!(
+            &state_transition__merkle_update__prev_authentication__hashes__ec_subset_sum__bit_neg
+                * (&trace_table[(1, i + 0)] - &merkle_hash_points__y)
+                - &trace_table[(2, i + 0)] * (&trace_table[(0, i + 0)] - &merkle_hash_points__x),
+            FieldElement::ZERO
+        );
+    }
+    if (true) && !(i % 256 == 255) {
+        assert_eq!( &trace_table[(2,i + 0)] * &trace_table[(2,i + 0)] - &state_transition__merkle_update__prev_authentication__hashes__ec_subset_sum__bit_neg * (&trace_table[(0,i + 0)] + &merkle_hash_points__x + &trace_table[(0,i + 1)]), FieldElement::ZERO);
+    }
+    if (true) && !(i % 256 == 255) {
+        assert_eq!(
+            &state_transition__merkle_update__prev_authentication__hashes__ec_subset_sum__bit_neg
+                * (&trace_table[(1, i + 0)] + &trace_table[(1, i + 1)])
+                - &trace_table[(2, i + 0)] * (&trace_table[(0, i + 0)] - &trace_table[(0, i + 1)]),
+            FieldElement::ZERO
+        );
+    }
+    if (true) && !(i % 256 == 255) {
+        assert_eq!( &state_transition__merkle_update__prev_authentication__hashes__ec_subset_sum__bit_neg * (&state_transition__merkle_update__prev_authentication__hashes__ec_subset_sum__bit_neg - FieldElement::ONE), FieldElement::ZERO);
+    }
+    if (true) && !(i % 256 == 255) {
+        assert_eq!(
+            &state_transition__merkle_update__prev_authentication__hashes__ec_subset_sum__bit
+                * (&trace_table[(0, i + 1)] - &trace_table[(0, i + 0)]),
+            FieldElement::ZERO
+        );
+    }
+    if (i % 256 == 0) && !(i % 512 == 512 / 2) {
+        assert_eq!(
+            &trace_table[(0, i + 256)] - &trace_table[(0, i + 255)],
+            FieldElement::ZERO
+        );
+    }
+    if (i % 512 == 0) && !(false) {
+        assert_eq!(
+            &trace_table[(0, i + 0)] - &shift_point.x,
+            FieldElement::ZERO
+        );
+    }
+    if (i % 512 == 0) && !(false) {
+        assert_eq!(
+            &trace_table[(1, i + 0)] - &shift_point.y,
+            FieldElement::ZERO
+        );
+    }
+    if (true) && !(i % 256 == 255) {
+        assert_eq!(
+            &state_transition__merkle_update__prev_authentication__hashes__ec_subset_sum__bit
+                * (&trace_table[(1, i + 1)] - &trace_table[(1, i + 0)]),
+            FieldElement::ZERO
+        );
+    }
+    if (i % 256 == 0) && !(i % 512 == 512 / 2) {
+        assert_eq!(
+            &trace_table[(1, i + 256)] - &trace_table[(1, i + 255)],
+            FieldElement::ZERO
+        );
+    }
+    if (i % 256 == 251) && !(false) {
+        assert_eq!(trace_table[(3, i + 0)].clone(), FieldElement::ZERO);
+    }
+    if (i % 256 == 255) && !(false) {
+        assert_eq!(trace_table[(3, i + 0)].clone(), FieldElement::ZERO);
+    }
+}
+
 fn test_trace_table() {
     let trace_table = get_trace_table();
     for i in 0..trace_table.num_rows() {
+        test_trace_table_hash_pool(&trace_table, i);
+
+        let hash_pool_points__y = FieldElement::ONE;
+        let hash_pool_points__x = FieldElement::ONE;
+
         let is_settlement = FieldElement::ZERO;
         let is_modification = FieldElement::ZERO;
         let amounts_range_check__bit_0 = FieldElement::ONE;
@@ -39,11 +141,6 @@ fn test_trace_table() {
         let state_transition__merkle_update__side_bit_extraction__bit_0 = FieldElement::ZERO; // I think this is the negation of the above?
         let state_transition__merkle_update__prev_authentication__leaf_0 = FieldElement::ONE;
         let state_transition__merkle_update__prev_authentication__sibling_0 = FieldElement::ZERO;
-        let state_transition__merkle_update__prev_authentication__hashes__ec_subset_sum__bit_neg =
-            FieldElement::ZERO;
-        let state_transition__merkle_update__prev_authentication__hashes__ec_subset_sum__bit_neg_neg =
-            FieldElement::ONE
-                - &state_transition__merkle_update__prev_authentication__hashes__ec_subset_sum__bit_neg;
         let state_transition__merkle_update__new_authentication__hashes__ec_subset_sum__bit =
             FieldElement::ONE;
         let state_transition__merkle_update__new_authentication__hashes__ec_subset_sum__bit_neg =
@@ -97,8 +194,6 @@ fn test_trace_table() {
         // periodic columns
         let merkle_hash_points__x = FieldElement::ONE;
         let merkle_hash_points__y = FieldElement::ONE;
-        let hash_pool_points__y = FieldElement::ONE;
-        let hash_pool_points__x = FieldElement::ONE;
 
         if (i % 4 == 0) && !(i % 1024 == 1024 / 256 * 255) {
             assert_eq!(
@@ -123,6 +218,7 @@ fn test_trace_table() {
         }
         if (i % 4 == 0) && !(i % 1024 == 1024 / 256 * 255) {
             assert_eq!(
+                // here's the slope squaring.
                 &trace_table[(8, i + 1)] * &trace_table[(8, i + 1)]
                     - &hash_pool__hash__ec_subset_sum__bit
                         * (&trace_table[(8, i + 0)]
@@ -172,6 +268,7 @@ fn test_trace_table() {
                 FieldElement::ZERO
             );
         }
+        // it looks like they're crammed a third pedersen hash into column 8?
         if (i % 2048 == 0) && !(false) {
             assert_eq!(
                 &trace_table[(8, i + 2)] - &shift_point.y,
@@ -194,72 +291,6 @@ fn test_trace_table() {
         }
         if (i % 16384 == 16384 / 32 * path_length) && !(false) {
             assert_eq!(trace_table[(6, i + 255)].clone(), FieldElement::ZERO);
-        }
-        if (true) && !(i % 256 == 255) {
-            assert_eq!( &state_transition__merkle_update__prev_authentication__hashes__ec_subset_sum__bit_neg * (&state_transition__merkle_update__prev_authentication__hashes__ec_subset_sum__bit_neg - FieldElement::ONE), FieldElement::ZERO);
-        }
-        if (i % 256 == 251) && !(false) {
-            assert_eq!(trace_table[(3, i + 0)].clone(), FieldElement::ZERO);
-        }
-        if (i % 256 == 255) && !(false) {
-            assert_eq!(trace_table[(3, i + 0)].clone(), FieldElement::ZERO);
-        }
-        if (true) && !(i % 256 == 255) {
-            assert_eq!(
-                &state_transition__merkle_update__prev_authentication__hashes__ec_subset_sum__bit_neg
-                    * (&trace_table[(1, i + 0)] - &merkle_hash_points__y)
-                    - &trace_table[(2, i + 0)] * (&trace_table[(0, i + 0)] - &merkle_hash_points__x),
-                FieldElement::ZERO
-            );
-        }
-        if (true) && !(i % 256 == 255) {
-            assert_eq!( &trace_table[(2,i + 0)] * &trace_table[(2,i + 0)] - &state_transition__merkle_update__prev_authentication__hashes__ec_subset_sum__bit_neg * (&trace_table[(0,i + 0)] + &merkle_hash_points__x + &trace_table[(0,i + 1)]), FieldElement::ZERO);
-        }
-        if (true) && !(i % 256 == 255) {
-            assert_eq!(
-                &state_transition__merkle_update__prev_authentication__hashes__ec_subset_sum__bit_neg
-                    * (&trace_table[(1, i + 0)] + &trace_table[(1, i + 1)])
-                    - &trace_table[(2, i + 0)] * (&trace_table[(0, i + 0)] - &trace_table[(0, i + 1)]),
-                FieldElement::ZERO
-            );
-        }
-        if (true) && !(i % 256 == 255) {
-            assert_eq!(
-                &state_transition__merkle_update__prev_authentication__hashes__ec_subset_sum__bit_neg_neg
-                    * (&trace_table[(0, i + 1)] - &trace_table[(0, i + 0)]),
-                FieldElement::ZERO
-            );
-        }
-        if (true) && !(i % 256 == 255) {
-            assert_eq!(
-                &state_transition__merkle_update__prev_authentication__hashes__ec_subset_sum__bit_neg_neg
-                    * (&trace_table[(1, i + 1)] - &trace_table[(1, i + 0)]),
-                FieldElement::ZERO
-            );
-        }
-        if (i % 256 == 0) && !(i % 512 == 512 / 2) {
-            assert_eq!(
-                &trace_table[(0, i + 256)] - &trace_table[(0, i + 255)],
-                FieldElement::ZERO
-            );
-        }
-        if (i % 256 == 0) && !(i % 512 == 512 / 2) {
-            assert_eq!(
-                &trace_table[(1, i + 256)] - &trace_table[(1, i + 255)],
-                FieldElement::ZERO
-            );
-        }
-        if (i % 512 == 0) && !(false) {
-            assert_eq!(
-                &trace_table[(0, i + 0)] - &shift_point.x,
-                FieldElement::ZERO
-            );
-        }
-        if (i % 512 == 0) && !(false) {
-            assert_eq!(
-                &trace_table[(1, i + 0)] - &shift_point.y,
-                FieldElement::ZERO
-            );
         }
         if (i % 512 == 0) && !(i % 16384 == 16384 / 32 * 31 || i % 16384 == 16384 / 16 * 15) {
             assert_eq!(
@@ -294,6 +325,7 @@ fn test_trace_table() {
             );
         }
         if (true) && !(i % 256 == 255) {
+            // slope squaring here.
             assert_eq!( &trace_table[(6,i + 0)] * &trace_table[(6,i + 0)] - &state_transition__merkle_update__new_authentication__hashes__ec_subset_sum__bit * (&trace_table[(4,i + 0)] + &merkle_hash_points__x + &trace_table[(4,i + 1)]), FieldElement::ZERO);
         }
         if (true) && !(i % 256 == 255) {
