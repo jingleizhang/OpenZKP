@@ -189,22 +189,14 @@ fn test_hasher_3(trace_table: &TraceTable, i: usize) {
     }
     if (i % 1024 == 0) && !(i % 2048 == 2048 / 2) {
         assert_eq!(trace_table[(8, i + 1024)], trace_table[(8, i + 1020)]);
-    }
-    if (i % 1024 == 0) && !(i % 2048 == 2048 / 2) {
-        assert_eq!(
-            &trace_table[(8, i + 1026)] - &trace_table[(8, i + 1022)],
-            FieldElement::ZERO
-        );
+        assert_eq!(trace_table[(8, i + 1026)], trace_table[(8, i + 1022)]);
     }
     if (i % 2048 == 0) {
         assert_eq!(trace_table[(8, i)], shift_point.x);
         assert_eq!(trace_table[(8, i + 2)], shift_point.y);
     }
     if (i % 4096 == 0) {
-        assert_eq!(
-            &trace_table[(8, i + 2044)] - &trace_table[(8, i + 2051)],
-            FieldElement::ZERO
-        );
+        assert_eq!(trace_table[(8, i + 2044)], trace_table[(8, i + 2051)]);
     }
 
     if (i % 1024 == 4 * 251) || (i % 1024 == 4 * 255) {
