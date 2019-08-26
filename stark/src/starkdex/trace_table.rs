@@ -83,6 +83,17 @@ fn test_hasher_1(trace_table: &TraceTable, i: usize) {
     if (i % 256 == 251) || (i % 256 == 255) {
         assert!(trace_table[(3, i)].is_zero());
     }
+    // state_transition/merkle_update/side_bit_extraction/bit_1 = column6_row767 -
+    // (column6_row1279 + column6_row1279) state_transition/merkle_update/
+    // side_bit_extraction/bit_0 = column6_row255 - (column6_row767 +
+    // column6_row767)
+    if (i % 512 == 0) && !(i % 16384 == 16384 / 32 * 31 || i % 16384 == 16384 / 16 * 15) {
+        if state_transition__merkle_update__side_bit_extraction__bit_1.is_zero() {
+            assert_eq!(trace_table[(0, i + 511)], trace_table[(3, i + 512)]);
+        } else {
+            assert_eq!(trace_table[(0, i + 511)], trace_table[(3, i + 768)]);
+        }
+    }
 }
 
 fn test_hasher_2(trace_table: &TraceTable, i: usize) {
@@ -127,8 +138,10 @@ fn test_hasher_2(trace_table: &TraceTable, i: usize) {
         assert_eq!(trace_table[(4, i)], shift_point.x);
         assert_eq!(trace_table[(5, i)], shift_point.y);
     }
-
-    // this is where the direction and path comes in.
+    // state_transition/merkle_update/side_bit_extraction/bit_1 = column6_row767 -
+    // (column6_row1279 + column6_row1279) state_transition/merkle_update/
+    // side_bit_extraction/bit_0 = column6_row255 - (column6_row767 +
+    // column6_row767)
     if i % 512 == 0 && i / 512 % 32 != 31 && i / 512 % 32 != 30 {
         if state_transition__merkle_update__side_bit_extraction__bit_1.is_zero() {
             assert_eq!(trace_table[(4, i + 511)], trace_table[(7, i + 512)]);
@@ -305,20 +318,6 @@ fn test_trace_table() {
         }
         if (i % 16384 == 16384 / 32 * path_length) {
             assert_eq!(trace_table[(6, i + 255)].clone(), FieldElement::ZERO);
-        }
-        // Copy the new x value into the next left source or next right source,
-        // depending on `bit_extraction__bit`. this is the only occurance of
-        // column0 and column3 outside of the hash calculations.
-        // state_transition/merkle_update/side_bit_extraction/bit_1 = column6_row767 -
-        // (column6_row1279 + column6_row1279) state_transition/merkle_update/
-        // side_bit_extraction/bit_0 = column6_row255 - (column6_row767 +
-        // column6_row767)
-        if (i % 512 == 0) && !(i % 16384 == 16384 / 32 * 31 || i % 16384 == 16384 / 16 * 15) {
-            if state_transition__merkle_update__side_bit_extraction__bit_1.is_zero() {
-                assert_eq!(trace_table[(0, i + 511)], trace_table[(3, i + 512)]);
-            } else {
-                assert_eq!(trace_table[(0, i + 511)], trace_table[(3, i + 768)]);
-            }
         }
         if (i % 512 == 0) && !(i % 16384 == 16384 / 32 * 31) {
             assert_eq!(
