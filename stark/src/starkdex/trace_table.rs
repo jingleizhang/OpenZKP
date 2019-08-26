@@ -215,8 +215,6 @@ fn test_trace_table() {
         let is_modification = FieldElement::ZERO; // periodic column from public input
 
         let amounts_range_check__bit_0 = FieldElement::ONE;
-        let sig_verify__exponentiate_key__bit = FieldElement::ONE;
-        let sig_verify__exponentiate_generator__bit = FieldElement::ONE;
         let state_transition__merkle_update__side_bit_extraction__bit_1 = FieldElement::ONE;
         // state_transition/merkle_update/side_bit_extraction/bit_0 =
         // column6_row255 - (column6_row767 + column6_row767)
@@ -239,11 +237,6 @@ fn test_trace_table() {
         let ecdsa_points__x = FieldElement::ONE;
         let state_transition__merkle_update__new_authentication__leaf_0 = FieldElement::ZERO;
 
-        let vault_shift = FieldElement::ONE;
-
-        let trade_shift = FieldElement::ZERO;
-        let amount_shift = FieldElement::ZERO;
-
         // These are in the oods values...!?!?
         // Is it possible to express a non-constant shift in the constraint system?
         // These appear to be the entry points into hashers 1 and 2.
@@ -255,15 +248,6 @@ fn test_trace_table() {
         let trace_length = 0;
         let path_length = 256;
 
-        let sig_verify__exponentiate_key__bit_neg =
-            FieldElement::ONE - &sig_verify__exponentiate_key__bit;
-        let sig_verify__exponentiate_generator__bit_neg =
-            FieldElement::ONE - &sig_verify__exponentiate_generator__bit;
-
-        // periodic columns
-        let merkle_hash_points__x = FieldElement::ONE;
-        let merkle_hash_points__y = FieldElement::ONE;
-
         if (i % 512 == 0) && !(i % 16384 == 16384 / 32 * 31) {
             assert_eq!(
                 &state_transition__merkle_update__side_bit_extraction__bit_0
@@ -272,9 +256,6 @@ fn test_trace_table() {
                 FieldElement::ZERO
             );
         }
-        if (i % 16384 == 16384 / 32 * path_length) {
-            assert_eq!(trace_table[(6, i + 255)].clone(), FieldElement::ZERO);
-        }
         if (i % 512 == 0) && !(i % 16384 == 16384 / 32 * 31) {
             assert_eq!(
                 state_transition__merkle_update__prev_authentication__sibling_0
@@ -282,6 +263,8 @@ fn test_trace_table() {
                 FieldElement::ZERO
             );
         }
+
+        // some sort of hash is being computed here?
         if (i % 16384 == 0) {
             assert_eq!(
                 state_transition__merkle_update__prev_authentication__leaf_0,
@@ -322,6 +305,17 @@ fn test_trace_table() {
                 FieldElement::ZERO
             );
         }
+        // these signify hash ends...
+        if (i % 16384 == 16384 / 256 * 251) {
+            assert_eq!(trace_table[(9, i + 24)].clone(), FieldElement::ZERO);
+        }
+        if (i % 16384 == 16384 / 256 * 255) {
+            assert_eq!(trace_table[(9, i + 24)].clone(), FieldElement::ZERO);
+        }
+        if (i % 16384 == 16384 / 32 * path_length) {
+            assert_eq!(trace_table[(6, i + 255)].clone(), FieldElement::ZERO);
+        }
+
         if (i % 128 == 0) && !(i % 8192 == 8192 / 64 * 63) {
             assert_eq!(
                 &amounts_range_check__bit_0 * &amounts_range_check__bit_0
@@ -332,33 +326,10 @@ fn test_trace_table() {
         if (i % 8192 == 8192 / 64 * 63) {
             assert_eq!(trace_table[(9, i + 4)].clone(), FieldElement::ZERO);
         }
-        if (i % 64 == 0) && !(i % 16384 == 16384 / 256 * 255) {
-            assert_eq!(
-                &sig_verify__doubling_key__x_squared
-                    + &sig_verify__doubling_key__x_squared
-                    + &sig_verify__doubling_key__x_squared
-                    + &sig_config.alpha
-                    - (&trace_table[(9, i + 32)] + &trace_table[(9, i + 32)])
-                        * &trace_table[(9, i + 16)],
-                FieldElement::ZERO
-            );
-        }
-        if (i % 64 == 0) && !(i % 16384 == 16384 / 256 * 255) {
-            assert_eq!(
-                &trace_table[(9, i + 16)] * &trace_table[(9, i + 16)]
-                    - (&trace_table[(9, i)] + &trace_table[(9, i)] + &trace_table[(9, i + 64)]),
-                FieldElement::ZERO
-            );
-        }
-        if (i % 64 == 0) && !(i % 16384 == 16384 / 256 * 255) {
-            assert_eq!(
-                &trace_table[(9, i + 32)] + &trace_table[(9, i + 96)]
-                    - &trace_table[(9, i + 16)]
-                        * (&trace_table[(9, i)] - &trace_table[(9, i + 64)]),
-                FieldElement::ZERO
-            );
-        }
         if (i % 128 == 0) && !(i % 32768 == 32768 / 256 * 256) {
+            let sig_verify__exponentiate_generator__bit = FieldElement::ONE;
+            let sig_verify__exponentiate_generator__bit_neg =
+                FieldElement::ONE - &sig_verify__exponentiate_generator__bit;
             assert_eq!(
                 &sig_verify__exponentiate_generator__bit
                     * (&sig_verify__exponentiate_generator__bit - FieldElement::ONE),
@@ -402,19 +373,14 @@ fn test_trace_table() {
             );
         }
         if (i % 64 == 0) && !(i % 16384 == 16384 / 256 * 255) {
+            let sig_verify__exponentiate_key__bit = FieldElement::ONE;
+            let sig_verify__exponentiate_key__bit_neg =
+                FieldElement::ONE - &sig_verify__exponentiate_key__bit;
             assert_eq!(
                 &sig_verify__exponentiate_key__bit
                     * (&sig_verify__exponentiate_key__bit - FieldElement::ONE),
                 FieldElement::ZERO
             );
-        }
-        if (i % 16384 == 16384 / 256 * 251) {
-            assert_eq!(trace_table[(9, i + 24)].clone(), FieldElement::ZERO);
-        }
-        if (i % 16384 == 16384 / 256 * 255) {
-            assert_eq!(trace_table[(9, i + 24)].clone(), FieldElement::ZERO);
-        }
-        if (i % 64 == 0) && !(i % 16384 == 16384 / 256 * 255) {
             assert_eq!(
                 &sig_verify__exponentiate_key__bit
                     * (&trace_table[(9, i + 8)] - &trace_table[(9, i + 32)])
@@ -422,8 +388,6 @@ fn test_trace_table() {
                         * (&trace_table[(9, i + 48)] - &trace_table[(9, i)]),
                 FieldElement::ZERO
             );
-        }
-        if (i % 64 == 0) && !(i % 16384 == 16384 / 256 * 255) {
             assert_eq!(
                 &trace_table[(9, i + 40)] * &trace_table[(9, i + 40)]
                     - &sig_verify__exponentiate_key__bit
@@ -432,8 +396,6 @@ fn test_trace_table() {
                             + &trace_table[(9, i + 112)]),
                 FieldElement::ZERO
             );
-        }
-        if (i % 64 == 0) && !(i % 16384 == 16384 / 256 * 255) {
             assert_eq!(
                 &sig_verify__exponentiate_key__bit
                     * (&trace_table[(9, i + 8)] + &trace_table[(9, i + 72)])
@@ -441,25 +403,39 @@ fn test_trace_table() {
                         * (&trace_table[(9, i + 48)] - &trace_table[(9, i + 112)]),
                 FieldElement::ZERO
             );
-        }
-        if (i % 64 == 0) && !(i % 16384 == 16384 / 256 * 255) {
             assert_eq!(
                 &trace_table[(9, i + 56)] * (&trace_table[(9, i + 48)] - &trace_table[(9, i)])
                     - FieldElement::ONE,
                 FieldElement::ZERO
             );
-        }
-        if (i % 64 == 0) && !(i % 16384 == 16384 / 256 * 255) {
             assert_eq!(
                 &sig_verify__exponentiate_key__bit_neg
                     * (&trace_table[(9, i + 112)] - &trace_table[(9, i + 48)]),
                 FieldElement::ZERO
             );
-        }
-        if (i % 64 == 0) && !(i % 16384 == 16384 / 256 * 255) {
             assert_eq!(
                 &sig_verify__exponentiate_key__bit_neg
                     * (&trace_table[(9, i + 72)] - &trace_table[(9, i + 8)]),
+                FieldElement::ZERO
+            );
+            assert_eq!(
+                &sig_verify__doubling_key__x_squared
+                    + &sig_verify__doubling_key__x_squared
+                    + &sig_verify__doubling_key__x_squared
+                    + &sig_config.alpha
+                    - (&trace_table[(9, i + 32)] + &trace_table[(9, i + 32)])
+                        * &trace_table[(9, i + 16)],
+                FieldElement::ZERO
+            );
+            assert_eq!(
+                &trace_table[(9, i + 16)] * &trace_table[(9, i + 16)]
+                    - (&trace_table[(9, i)] + &trace_table[(9, i)] + &trace_table[(9, i + 64)]),
+                FieldElement::ZERO
+            );
+            assert_eq!(
+                &trace_table[(9, i + 32)] + &trace_table[(9, i + 96)]
+                    - &trace_table[(9, i + 16)]
+                        * (&trace_table[(9, i)] - &trace_table[(9, i + 64)]),
                 FieldElement::ZERO
             );
         }
@@ -531,6 +507,11 @@ fn test_trace_table() {
         }
         if (i % 65536 == 0) {
             if is_settlement == FieldElement::ONE {
+                // These are constants? from the public input or agreed upon?
+                let vault_shift = FieldElement::ONE;
+                let trade_shift = FieldElement::ZERO;
+                let amount_shift = FieldElement::ZERO;
+
                 assert_eq!(
                     &trace_table[(8, i + 7171)]
                         - (((&trace_table[(6, i + 255)] * vault_shift
@@ -581,11 +562,14 @@ fn test_trace_table() {
 
             if is_modification == FieldElement::ONE {
                 let boundary_vault_id = FieldElement::ONE; // periodic_column
-                let boundary_base = FieldElement::ONE; // periodic_column
+                let boundary_base = FieldElement::ONE; // periodic_column this is a 0-1 column?
                 let boundary_amount0 = FieldElement::ONE; // periodic_column
                 let boundary_amount1 = FieldElement::ONE; // periodic_column
                 let boundary_token = FieldElement::ONE; // periodic_column
                 let boundary_key = FieldElement::ONE; // periodic_column
+
+                // ??? no idea what this does. it probably initializes the hash though?
+                assert_eq!(column4_row_expr0, column4_row_expr1);
 
                 assert_eq!(&trace_table[(9, i + 16376)] * &boundary_base, boundary_key);
                 assert_eq!(
@@ -600,6 +584,7 @@ fn test_trace_table() {
                     &trace_table[(8, i + 11267)] * &boundary_base,
                     boundary_amount1
                 );
+                // this verifies that the hash is correct for the vault id.
                 assert_eq!(
                     &trace_table[(6, i + 255)] * &boundary_base,
                     boundary_vault_id
@@ -633,12 +618,6 @@ fn test_trace_table() {
         }
         if (i % 16384 == 0) && !(i == trace_length - 65536 + 49152) {
             assert_eq!(&column4_row_expr0 - column0_row_expr2, FieldElement::ZERO);
-        }
-        if (i % 65536 == 0) {
-            assert_eq!(
-                &is_modification * (&column4_row_expr0 - &column4_row_expr1),
-                FieldElement::ZERO
-            );
         }
     }
 }
