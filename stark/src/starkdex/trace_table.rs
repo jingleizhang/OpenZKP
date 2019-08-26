@@ -548,14 +548,16 @@ fn test_trace_table() {
                 assert_eq!(trace_table[(8, i + 39939)], trace_table[(6, i + 33023)]);
                 assert_eq!(trace_table[(8, i + 8188)], trace_table[(9, i + 20)]);
                 assert_eq!(trace_table[(8, i + 40956)], trace_table[(9, i + 32788)]);
-                assert_eq!(trace_table[(9, i)], trace_table[(9, i + 16376)]);
+
                 assert_eq!(trace_table[(8, i + 4099)], trace_table[(9, i + 16360)]);
-                assert_eq!(trace_table[(9, i)], trace_table[(9, i + 65528)]);
-                assert_eq!(trace_table[(8, i + 5123)], trace_table[(9, i + 65512)]);
-                assert_eq!(trace_table[(9, i + 32768)], trace_table[(9, i + 32760)]);
                 assert_eq!(trace_table[(8, i + 4099)], trace_table[(9, i + 32744)]);
-                assert_eq!(trace_table[(9, i + 32768)], trace_table[(9, i + 49144)]);
+                assert_eq!(trace_table[(8, i + 5123)], trace_table[(9, i + 65512)]);
                 assert_eq!(trace_table[(8, i + 5123)], trace_table[(9, i + 49128)]);
+
+                assert_eq!(trace_table[(9, i)], trace_table[(9, i + 16376)]);
+                assert_eq!(trace_table[(9, i)], trace_table[(9, i + 65528)]);
+                assert_eq!(trace_table[(9, i + 32768)], trace_table[(9, i + 32760)]);
+                assert_eq!(trace_table[(9, i + 32768)], trace_table[(9, i + 49144)]);
             }
 
             if is_modification == FieldElement::ONE {
