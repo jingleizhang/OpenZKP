@@ -3,6 +3,8 @@ column1: ecc_point y
 column2: ecc_point slope
 column3: pedersen sum? pretty sure this is true.
 
+The first four columns appear to be "closed". The only 
+
 column 4: this is another ecc_point x / hash value.
 column 5: ecc_point y
 column6: sometimes this is a slope, othertimes it is being used a marker for something else?
