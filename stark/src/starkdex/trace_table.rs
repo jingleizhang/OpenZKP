@@ -255,8 +255,6 @@ fn test_trace_table() {
                     - &state_transition__merkle_update__side_bit_extraction__bit_0,
                 FieldElement::ZERO
             );
-        }
-        if (i % 512 == 0) && !(i % 16384 == 16384 / 32 * 31) {
             assert_eq!(
                 state_transition__merkle_update__prev_authentication__sibling_0
                     - state_transition__merkle_update__new_authentication__sibling_0,
