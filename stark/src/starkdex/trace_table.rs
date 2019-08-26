@@ -38,7 +38,7 @@ struct Point {
     pub y: FieldElement,
 }
 
-fn test_trace_table_hash_pool(trace_table: &TraceTable, i: usize) {
+fn test_hasher_1(trace_table: &TraceTable, i: usize) {
     // state_transition/merkle_update/prev_authentication/hashes/ec_subset_sum/bit =
     // column3_row0 - (column3_row1 + column3_row1)
     let source_bit = &trace_table[(3, 0)] - trace_table[(3, 1)].double();
@@ -69,6 +69,7 @@ fn test_trace_table_hash_pool(trace_table: &TraceTable, i: usize) {
         } else {
             assert_eq!(trace_table[(0, i)], &trace_table[(0, i + 1)]);
             assert_eq!(trace_table[(1, i)], &trace_table[(1, i + 1)]);
+            assert_eq!(trace_table[(2, i)], FieldElement::ZERO);
         }
     }
     if (i % 256 == 0) && !(i % 512 == 256) {
@@ -83,6 +84,64 @@ fn test_trace_table_hash_pool(trace_table: &TraceTable, i: usize) {
         assert!(trace_table[(3, i)].is_zero());
     }
 }
+
+fn test_hasher_2(trace_table: &TraceTable, i: usize) {
+    // state_transition/merkle_update/new_authentication/hashes/ec_subset_sum/bit =
+    // column7_row0 - (column7_row1 + column7_row1)
+    let source_bit = &trace_table[(7, 0)] - trace_table[(7, 1)].double();
+
+    let shift_point = Point {
+        x: SHIFT_POINT.x,
+        y: SHIFT_POINT.y,
+    };
+
+    let merkle_hash_points__x = FieldElement::ONE;
+    let merkle_hash_points__y = FieldElement::ONE;
+
+    if i % 256 != 255 {
+        assert!(source_bit == FieldElement::ZERO || source_bit == FieldElement::ONE);
+        if source_bit.is_zero() {
+            assert_eq!(trace_table[(4, i)], trace_table[(4, i + 1)]);
+            assert_eq!(trace_table[(5, i)], trace_table[(5, i + 1)]);
+            assert_eq!(trace_table[(6, i)], FieldElement::ZERO);
+        } else {
+            assert_eq!(
+                &trace_table[(5, i)] - &merkle_hash_points__y,
+                &trace_table[(6, i)] * (&trace_table[(4, i)] - &merkle_hash_points__x),
+            );
+            assert_eq!(
+                &trace_table[(6, i)].square(),
+                &trace_table[(4, i)] + &merkle_hash_points__x + &trace_table[(4, i + 1)],
+            );
+            assert_eq!(
+                &trace_table[(5, i)] + &trace_table[(5, i + 1)],
+                &trace_table[(6, i)] * (&trace_table[(4, i)] - &trace_table[(4, i + 1)]),
+            );
+        }
+    }
+    if (i % 256 == 0) && !(i % 512 == 256) {
+        assert_eq!(trace_table[(4, i + 256)], trace_table[(4, i + 255)]);
+        assert_eq!(trace_table[(5, i + 256)], trace_table[(5, i + 255)]);
+    }
+    if (i % 512 == 0) {
+        assert_eq!(trace_table[(4, i)], shift_point.x);
+        assert_eq!(trace_table[(5, i)], shift_point.y);
+    }
+
+    // this is where the direction and path comes in.
+    if i % 512 == 0 && i / 512 % 32 != 31 && i / 512 % 32 != 30 {
+        if state_transition__merkle_update__side_bit_extraction__bit_1.is_zero() {
+            assert_eq!(trace_table[(4, i + 511)], trace_table[(7, i + 512)]);
+        } else {
+            assert_eq!(trace_table[(4, i + 511)], trace_table[(7, i + 768)]);
+        }
+    }
+    if (i % 256 == 251) || (i % 256 == 255) {
+        assert!(trace_table[(7, i)].is_zero());
+    }
+}
+
+fn test_hasher_3(trace_table: &TraceTable, i: usize) {}
 
 fn test_trace_table() {
     let trace_table = get_trace_table();
@@ -104,11 +163,6 @@ fn test_trace_table() {
         let state_transition__merkle_update__side_bit_extraction__bit_0 = FieldElement::ZERO; // I think this is the negation of the above?
         let state_transition__merkle_update__prev_authentication__leaf_0 = FieldElement::ONE;
         let state_transition__merkle_update__prev_authentication__sibling_0 = FieldElement::ZERO;
-        let state_transition__merkle_update__new_authentication__hashes__ec_subset_sum__bit =
-            FieldElement::ONE;
-        let state_transition__merkle_update__new_authentication__hashes__ec_subset_sum__bit_neg =
-            FieldElement::ONE
-                - &state_transition__merkle_update__new_authentication__hashes__ec_subset_sum__bit;
         let state_transition__merkle_update__new_authentication__sibling_0 = FieldElement::ZERO;
         let initial_root = FieldElement::ONE;
         let sig_config = SigConfig {
@@ -141,6 +195,9 @@ fn test_trace_table() {
         let trade_shift = FieldElement::ZERO;
         let amount_shift = FieldElement::ZERO;
 
+        // These are in the oods values...!?!?
+        // Is it possible to express a non-constant shift in the constraint system?
+        // These appear to be the entry points into hashers 1 and 2.
         let column4_row_expr0 = FieldElement::NEGATIVE_ONE;
         let column4_row_expr1 = FieldElement::NEGATIVE_ONE;
         let column0_row_expr2 = FieldElement::NEGATIVE_ONE;
@@ -165,10 +222,10 @@ fn test_trace_table() {
                 FieldElement::ZERO
             );
         }
-        if (i % 1024 == 4 * 251) && !(false) {
+        if (i % 1024 == 4 * 251) {
             assert_eq!(trace_table[(8, i + 3)].clone(), FieldElement::ZERO);
         }
-        if (i % 1024 == 4 * 255) && !(false) {
+        if (i % 1024 == 4 * 255) {
             assert_eq!(trace_table[(8, i + 3)].clone(), FieldElement::ZERO);
         }
         if (i % 4 == 0) && !(i % 1024 == 1024 / 256 * 255) {
@@ -222,17 +279,17 @@ fn test_trace_table() {
                 FieldElement::ZERO
             );
         }
-        if (i % 2048 == 0) && !(false) {
+        if (i % 2048 == 0) {
             assert_eq!(&trace_table[(8, i)] - &shift_point.x, FieldElement::ZERO);
         }
         // it looks like they're crammed a third pedersen hash into column 8?
-        if (i % 2048 == 0) && !(false) {
+        if (i % 2048 == 0) {
             assert_eq!(
                 &trace_table[(8, i + 2)] - &shift_point.y,
                 FieldElement::ZERO
             );
         }
-        if (i % 4096 == 0) && !(false) {
+        if (i % 4096 == 0) {
             assert_eq!(
                 &trace_table[(8, i + 2044)] - &trace_table[(8, i + 2051)],
                 FieldElement::ZERO
@@ -246,7 +303,7 @@ fn test_trace_table() {
                 FieldElement::ZERO
             );
         }
-        if (i % 16384 == 16384 / 32 * path_length) && !(false) {
+        if (i % 16384 == 16384 / 32 * path_length) {
             assert_eq!(trace_table[(6, i + 255)].clone(), FieldElement::ZERO);
         }
         // Copy the new x value into the next left source or next right source,
@@ -263,81 +320,6 @@ fn test_trace_table() {
                 assert_eq!(trace_table[(0, i + 511)], trace_table[(3, i + 768)]);
             }
         }
-        if (true) && !(i % 256 == 255) {
-            assert_eq!( &state_transition__merkle_update__new_authentication__hashes__ec_subset_sum__bit * (&state_transition__merkle_update__new_authentication__hashes__ec_subset_sum__bit - FieldElement::ONE), FieldElement::ZERO);
-        }
-        if (i % 256 == 251) && !(false) {
-            assert_eq!(trace_table[(7, i)].clone(), FieldElement::ZERO);
-        }
-        if (i % 256 == 255) && !(false) {
-            assert_eq!(trace_table[(7, i)].clone(), FieldElement::ZERO);
-        }
-        if (true) && !(i % 256 == 255) {
-            assert_eq!(
-                &state_transition__merkle_update__new_authentication__hashes__ec_subset_sum__bit
-                    * (&trace_table[(5, i)] - &merkle_hash_points__y)
-                    - &trace_table[(6, i)] * (&trace_table[(4, i)] - &merkle_hash_points__x),
-                FieldElement::ZERO
-            );
-        }
-        if (true) && !(i % 256 == 255) {
-            // slope squaring here.
-            assert_eq!( &trace_table[(6,i)] * &trace_table[(6,i)] - &state_transition__merkle_update__new_authentication__hashes__ec_subset_sum__bit * (&trace_table[(4,i)] + &merkle_hash_points__x + &trace_table[(4,i + 1)]), FieldElement::ZERO);
-        }
-        if (true) && !(i % 256 == 255) {
-            assert_eq!(
-                &state_transition__merkle_update__new_authentication__hashes__ec_subset_sum__bit
-                    * (&trace_table[(5, i)] + &trace_table[(5, i + 1)])
-                    - &trace_table[(6, i)] * (&trace_table[(4, i)] - &trace_table[(4, i + 1)]),
-                FieldElement::ZERO
-            );
-        }
-        if (true) && !(i % 256 == 255) {
-            assert_eq!(
-                &state_transition__merkle_update__new_authentication__hashes__ec_subset_sum__bit_neg
-                    * (&trace_table[(4, i + 1)] - &trace_table[(4, i)]),
-                FieldElement::ZERO
-            );
-        }
-        if (true) && !(i % 256 == 255) {
-            assert_eq!(
-                &state_transition__merkle_update__new_authentication__hashes__ec_subset_sum__bit_neg
-                    * (&trace_table[(5, i + 1)] - &trace_table[(5, i)]),
-                FieldElement::ZERO
-            );
-        }
-        if (i % 256 == 0) && !(i % 512 == 512 / 2) {
-            assert_eq!(
-                &trace_table[(4, i + 256)] - &trace_table[(4, i + 255)],
-                FieldElement::ZERO
-            );
-        }
-        if (i % 256 == 0) && !(i % 512 == 512 / 2) {
-            assert_eq!(
-                &trace_table[(5, i + 256)] - &trace_table[(5, i + 255)],
-                FieldElement::ZERO
-            );
-        }
-        if (i % 512 == 0) && !(false) {
-            assert_eq!(&trace_table[(4, i)] - &shift_point.x, FieldElement::ZERO);
-        }
-        if (i % 512 == 0) && !(false) {
-            assert_eq!(&trace_table[(5, i)] - &shift_point.y, FieldElement::ZERO);
-        }
-        if (i % 512 == 0) && !(i % 16384 == 16384 / 32 * 31 || i % 16384 == 16384 / 16 * 15) {
-            assert_eq!(
-                (FieldElement::ONE - &state_transition__merkle_update__side_bit_extraction__bit_1)
-                    * (&trace_table[(4, i + 511)] - &trace_table[(7, i + 512)]),
-                FieldElement::ZERO
-            );
-        }
-        if (i % 512 == 0) && !(i % 16384 == 16384 / 32 * 31 || i % 16384 == 16384 / 16 * 15) {
-            assert_eq!(
-                &state_transition__merkle_update__side_bit_extraction__bit_1
-                    * (&trace_table[(4, i + 511)] - &trace_table[(7, i + 768)]),
-                FieldElement::ZERO
-            );
-        }
         if (i % 512 == 0) && !(i % 16384 == 16384 / 32 * 31) {
             assert_eq!(
                 state_transition__merkle_update__prev_authentication__sibling_0
@@ -345,47 +327,47 @@ fn test_trace_table() {
                 FieldElement::ZERO
             );
         }
-        if (i % 16384 == 0) && !(false) {
+        if (i % 16384 == 0) {
             assert_eq!(
                 state_transition__merkle_update__prev_authentication__leaf_0
                     - &trace_table[(8, i + 4092)],
                 FieldElement::ZERO
             );
         }
-        if (i % 16384 == 0) && !(false) {
+        if (i % 16384 == 0) {
             assert_eq!(
                 state_transition__merkle_update__new_authentication__leaf_0
                     - &trace_table[(8, i + 12284)],
                 FieldElement::ZERO
             );
         }
-        if (i % 65536 == 0) && !(false) {
+        if (i % 65536 == 0) {
             assert_eq!(
                 &is_modification * (&trace_table[(9, i + 16376)] * &boundary_base - boundary_key),
                 FieldElement::ZERO
             );
         }
-        if (i % 65536 == 0) && !(false) {
+        if (i % 65536 == 0) {
             assert_eq!(
                 &is_modification * (&trace_table[(9, i + 16360)] * &boundary_base - boundary_token),
                 FieldElement::ZERO
             );
         }
-        if (i % 65536 == 0) && !(false) {
+        if (i % 65536 == 0) {
             assert_eq!(
                 &is_modification
                     * (&trace_table[(8, i + 3075)] * &boundary_base - boundary_amount0),
                 FieldElement::ZERO
             );
         }
-        if (i % 65536 == 0) && !(false) {
+        if (i % 65536 == 0) {
             assert_eq!(
                 &is_modification
                     * (&trace_table[(8, i + 11267)] * &boundary_base - boundary_amount1),
                 FieldElement::ZERO
             );
         }
-        if (i % 65536 == 0) && !(false) {
+        if (i % 65536 == 0) {
             assert_eq!(
                 &is_modification
                     * (&trace_table[(6, i + 255)] * &boundary_base - boundary_vault_id),
@@ -399,10 +381,10 @@ fn test_trace_table() {
                 FieldElement::ZERO
             );
         }
-        if (i % 8192 == 8192 / 64 * 63) && !(false) {
+        if (i % 8192 == 8192 / 64 * 63) {
             assert_eq!(trace_table[(9, i + 4)].clone(), FieldElement::ZERO);
         }
-        if (i % 65536 == 0) && !(false) {
+        if (i % 65536 == 0) {
             assert_eq!(
                 &is_settlement
                     * (&trace_table[(8, i + 3075)]
@@ -411,7 +393,7 @@ fn test_trace_table() {
                 FieldElement::ZERO
             );
         }
-        if (i % 65536 == 0) && !(false) {
+        if (i % 65536 == 0) {
             assert_eq!(
                 &is_settlement
                     * (&trace_table[(8, i + 35843)]
@@ -420,7 +402,7 @@ fn test_trace_table() {
                 FieldElement::ZERO
             );
         }
-        if (i % 65536 == 0) && !(false) {
+        if (i % 65536 == 0) {
             assert_eq!(
                 (&trace_table[(9, i + 4)]
                     - (&trace_table[(8, i + 3075)] - &trace_table[(8, i + 11267)]))
@@ -428,7 +410,7 @@ fn test_trace_table() {
                 FieldElement::ZERO
             );
         }
-        if (i % 65536 == 0) && !(false) {
+        if (i % 65536 == 0) {
             assert_eq!(
                 (&trace_table[(9, i + 32772)]
                     - (&trace_table[(8, i + 35843)] - &trace_table[(8, i + 44035)]))
@@ -436,7 +418,7 @@ fn test_trace_table() {
                 FieldElement::ZERO
             );
         }
-        if (i % 16384 == 0) && !(false) {
+        if (i % 16384 == 0) {
             assert_eq!(
                 &trace_table[(9, i + 8196)] - &trace_table[(8, i + 11267)],
                 FieldElement::ZERO
@@ -475,10 +457,10 @@ fn test_trace_table() {
                 FieldElement::ZERO
             );
         }
-        if (i % 32768 == 32768 / 256 * 251) && !(false) {
+        if (i % 32768 == 32768 / 256 * 251) {
             assert_eq!(trace_table[(9, i + 20)].clone(), FieldElement::ZERO);
         }
-        if (i % 32768 == 32768 / 256 * 255) && !(false) {
+        if (i % 32768 == 32768 / 256 * 255) {
             assert_eq!(trace_table[(9, i + 20)].clone(), FieldElement::ZERO);
         }
         if (i % 128 == 0) && !(i % 32768 == 32768 / 256 * 256) {
@@ -536,10 +518,10 @@ fn test_trace_table() {
                 FieldElement::ZERO
             );
         }
-        if (i % 16384 == 16384 / 256 * 251) && !(false) {
+        if (i % 16384 == 16384 / 256 * 251) {
             assert_eq!(trace_table[(9, i + 24)].clone(), FieldElement::ZERO);
         }
-        if (i % 16384 == 16384 / 256 * 255) && !(false) {
+        if (i % 16384 == 16384 / 256 * 255) {
             assert_eq!(trace_table[(9, i + 24)].clone(), FieldElement::ZERO);
         }
         if (i % 64 == 0) && !(i % 16384 == 16384 / 256 * 255) {
@@ -591,31 +573,31 @@ fn test_trace_table() {
                 FieldElement::ZERO
             );
         }
-        if (i % 32768 == 0) && !(false) {
+        if (i % 32768 == 0) {
             assert_eq!(
                 &trace_table[(9, i + 68)] - &sig_config.shift_point.x,
                 FieldElement::ZERO
             );
         }
-        if (i % 32768 == 0) && !(false) {
+        if (i % 32768 == 0) {
             assert_eq!(
                 &trace_table[(9, i + 36)] + &sig_config.shift_point.y,
                 FieldElement::ZERO
             );
         }
-        if (i % 16384 == 0) && !(false) {
+        if (i % 16384 == 0) {
             assert_eq!(
                 &trace_table[(9, i + 48)] - &sig_config.shift_point.x,
                 FieldElement::ZERO
             );
         }
-        if (i % 16384 == 0) && !(false) {
+        if (i % 16384 == 0) {
             assert_eq!(
                 &trace_table[(9, i + 8)] - &sig_config.shift_point.y,
                 FieldElement::ZERO
             );
         }
-        if (i % 32768 == 0) && !(false) {
+        if (i % 32768 == 0) {
             assert_eq!(
                 &trace_table[(9, i + 32676)]
                     - &trace_table[(9, i + 16328)]
@@ -624,7 +606,7 @@ fn test_trace_table() {
                 FieldElement::ZERO
             );
         }
-        if (i % 32768 == 0) && !(false) {
+        if (i % 32768 == 0) {
             assert_eq!(
                 &trace_table[(9, i + 32724)] * &trace_table[(9, i + 32724)]
                     - (&trace_table[(9, i + 32708)]
@@ -633,7 +615,7 @@ fn test_trace_table() {
                 FieldElement::ZERO
             );
         }
-        if (i % 32768 == 0) && !(false) {
+        if (i % 32768 == 0) {
             assert_eq!(
                 &trace_table[(9, i + 32676)] + &trace_table[(9, i + 16416)]
                     - &trace_table[(9, i + 32724)]
@@ -641,7 +623,7 @@ fn test_trace_table() {
                 FieldElement::ZERO
             );
         }
-        if (i % 32768 == 0) && !(false) {
+        if (i % 32768 == 0) {
             assert_eq!(
                 &trace_table[(9, i + 32740)]
                     * (&trace_table[(9, i + 32708)] - &trace_table[(9, i + 16368)])
@@ -649,7 +631,7 @@ fn test_trace_table() {
                 FieldElement::ZERO
             );
         }
-        if (i % 32768 == 0) && !(false) {
+        if (i % 32768 == 0) {
             assert_eq!(
                 &trace_table[(9, i + 32712)] + &sig_config.shift_point.y
                     - &trace_table[(8, i + 3069)]
@@ -657,7 +639,7 @@ fn test_trace_table() {
                 FieldElement::ZERO
             );
         }
-        if (i % 32768 == 0) && !(false) {
+        if (i % 32768 == 0) {
             assert_eq!(
                 &trace_table[(8, i + 3069)] * &trace_table[(8, i + 3069)]
                     - (&trace_table[(9, i + 32752)]
@@ -666,7 +648,7 @@ fn test_trace_table() {
                 FieldElement::ZERO
             );
         }
-        if (i % 32768 == 0) && !(false) {
+        if (i % 32768 == 0) {
             assert_eq!(
                 &trace_table[(8, i + 19453)]
                     * (&trace_table[(9, i + 32752)] - &sig_config.shift_point.x)
@@ -674,25 +656,25 @@ fn test_trace_table() {
                 FieldElement::ZERO
             );
         }
-        if (i % 32768 == 0) && !(false) {
+        if (i % 32768 == 0) {
             assert_eq!(
                 &trace_table[(9, i + 20)] * &trace_table[(8, i + 11261)] - FieldElement::ONE,
                 FieldElement::ZERO
             );
         }
-        if (i % 16384 == 0) && !(false) {
+        if (i % 16384 == 0) {
             assert_eq!(
                 &trace_table[(9, i + 24)] * &trace_table[(9, i + 16336)] - FieldElement::ONE,
                 FieldElement::ZERO
             );
         }
-        if (i % 32768 == 0) && !(false) {
+        if (i % 32768 == 0) {
             assert_eq!(
                 &trace_table[(8, i + 27645)] - &trace_table[(9, i)] * &trace_table[(9, i)],
                 FieldElement::ZERO
             );
         }
-        if (i % 32768 == 0) && !(false) {
+        if (i % 32768 == 0) {
             assert_eq!(
                 &trace_table[(9, i + 32)] * &trace_table[(9, i + 32)]
                     - (&trace_table[(9, i)] * &trace_table[(8, i + 27645)]
@@ -701,7 +683,7 @@ fn test_trace_table() {
                 FieldElement::ZERO
             );
         }
-        if (i % 65536 == 0) && !(false) {
+        if (i % 65536 == 0) {
             assert_eq!(
                 &is_settlement
                     * (&trace_table[(8, i + 7171)]
@@ -715,147 +697,147 @@ fn test_trace_table() {
                 FieldElement::ZERO
             );
         }
-        if (i % 65536 == 0) && !(false) {
+        if (i % 65536 == 0) {
             assert_eq!(
                 &is_settlement * (&trace_table[(8, i + 36867)] - &trace_table[(8, i + 8188)]),
                 FieldElement::ZERO
             );
         }
-        if (i % 65536 == 0) && !(false) {
+        if (i % 65536 == 0) {
             assert_eq!(
                 &is_settlement * (&trace_table[(8, i + 37891)] - &trace_table[(6, i + 16639)]),
                 FieldElement::ZERO
             );
         }
-        if (i % 65536 == 0) && !(false) {
+        if (i % 65536 == 0) {
             assert_eq!(
                 &is_settlement * (&trace_table[(8, i + 39939)] - &trace_table[(6, i + 33023)]),
                 FieldElement::ZERO
             );
         }
-        if (i % 65536 == 0) && !(false) {
+        if (i % 65536 == 0) {
             assert_eq!(
                 &is_settlement * (&trace_table[(8, i + 8188)] - &trace_table[(9, i + 20)]),
                 FieldElement::ZERO
             );
         }
-        if (i % 65536 == 0) && !(false) {
+        if (i % 65536 == 0) {
             assert_eq!(
                 &is_settlement * (&trace_table[(8, i + 40956)] - &trace_table[(9, i + 32788)]),
                 FieldElement::ZERO
             );
         }
-        if (i % 65536 == 0) && !(false) {
+        if (i % 65536 == 0) {
             assert_eq!(
                 &is_settlement * (&trace_table[(9, i)] - &trace_table[(9, i + 16376)]),
                 FieldElement::ZERO
             );
         }
-        if (i % 65536 == 0) && !(false) {
+        if (i % 65536 == 0) {
             assert_eq!(
                 &is_settlement * (&trace_table[(8, i + 4099)] - &trace_table[(9, i + 16360)]),
                 FieldElement::ZERO
             );
         }
-        if (i % 65536 == 0) && !(false) {
+        if (i % 65536 == 0) {
             assert_eq!(
                 &is_settlement * (&trace_table[(9, i)] - &trace_table[(9, i + 65528)]),
                 FieldElement::ZERO
             );
         }
-        if (i % 65536 == 0) && !(false) {
+        if (i % 65536 == 0) {
             assert_eq!(
                 &is_settlement * (&trace_table[(8, i + 5123)] - &trace_table[(9, i + 65512)]),
                 FieldElement::ZERO
             );
         }
-        if (i % 65536 == 0) && !(false) {
+        if (i % 65536 == 0) {
             assert_eq!(
                 &is_settlement * (&trace_table[(9, i + 32768)] - &trace_table[(9, i + 32760)]),
                 FieldElement::ZERO
             );
         }
-        if (i % 65536 == 0) && !(false) {
+        if (i % 65536 == 0) {
             assert_eq!(
                 &is_settlement * (&trace_table[(8, i + 4099)] - &trace_table[(9, i + 32744)]),
                 FieldElement::ZERO
             );
         }
-        if (i % 65536 == 0) && !(false) {
+        if (i % 65536 == 0) {
             assert_eq!(
                 &is_settlement * (&trace_table[(9, i + 32768)] - &trace_table[(9, i + 49144)]),
                 FieldElement::ZERO
             );
         }
-        if (i % 65536 == 0) && !(false) {
+        if (i % 65536 == 0) {
             assert_eq!(
                 &is_settlement * (&trace_table[(8, i + 5123)] - &trace_table[(9, i + 49128)]),
                 FieldElement::ZERO
             );
         }
-        if (i % 8192 == 0) && !(false) {
+        if (i % 8192 == 0) {
             assert_eq!(
                 &trace_table[(8, i + 1021)] * (FieldElement::ONE - &trace_table[(8, i + 1021)]),
                 FieldElement::ZERO
             );
         }
-        if (i % 8192 == 0) && !(false) {
+        if (i % 8192 == 0) {
             assert_eq!(
                 &trace_table[(8, i + 1021)] * &trace_table[(8, i + 3075)],
                 FieldElement::ZERO
             );
         }
-        if (i % 8192 == 0) && !(false) {
+        if (i % 8192 == 0) {
             assert_eq!(
                 &trace_table[(8, i + 1021)] * &trace_table[(8, i + 5117)],
                 FieldElement::ZERO
             );
         }
-        if (i % 8192 == 0) && !(false) {
+        if (i % 8192 == 0) {
             assert_eq!(
                 &trace_table[(8, i + 3075)] * &trace_table[(8, i + 5117)]
                     - (FieldElement::ONE - &trace_table[(8, i + 1021)]),
                 FieldElement::ZERO
             );
         }
-        if (i % 16384 == 0) && !(false) {
+        if (i % 16384 == 0) {
             assert_eq!(
                 (FieldElement::ONE - &trace_table[(8, i + 1021)]) * &trace_table[(9, i + 16376)]
                     - &trace_table[(8, i + 3)],
                 FieldElement::ZERO
             );
         }
-        if (i % 16384 == 0) && !(false) {
+        if (i % 16384 == 0) {
             assert_eq!(
                 (FieldElement::ONE - &trace_table[(8, i + 1021)]) * &trace_table[(9, i + 16360)]
                     - &trace_table[(8, i + 1027)],
                 FieldElement::ZERO
             );
         }
-        if (i % 16384 == 0) && !(false) {
+        if (i % 16384 == 0) {
             assert_eq!(
                 (FieldElement::ONE - &trace_table[(8, i + 9213)]) * &trace_table[(9, i + 16376)]
                     - &trace_table[(8, i + 8195)],
                 FieldElement::ZERO
             );
         }
-        if (i % 16384 == 0) && !(false) {
+        if (i % 16384 == 0) {
             assert_eq!(
                 (FieldElement::ONE - &trace_table[(8, i + 9213)]) * &trace_table[(9, i + 16360)]
                     - &trace_table[(8, i + 9219)],
                 FieldElement::ZERO
             );
         }
-        if (i == 0) && !(false) {
+        if (i == 0) {
             assert_eq!(column0_row_expr0 - initial_root, FieldElement::ZERO);
         }
-        if (i == trace_length - 65536) && !(false) {
+        if (i == trace_length - 65536) {
             assert_eq!(&column4_row_expr1 - final_root, FieldElement::ZERO);
         }
         if (i % 16384 == 0) && !(i == trace_length - 65536 + 49152) {
             assert_eq!(&column4_row_expr0 - column0_row_expr2, FieldElement::ZERO);
         }
-        if (i % 65536 == 0) && !(false) {
+        if (i % 65536 == 0) {
             assert_eq!(
                 &is_modification * (&column4_row_expr0 - &column4_row_expr1),
                 FieldElement::ZERO
