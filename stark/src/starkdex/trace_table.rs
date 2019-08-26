@@ -52,48 +52,35 @@ fn test_trace_table_hash_pool(trace_table: &TraceTable, i: usize) {
     let merkle_hash_points__y = FieldElement::ONE;
 
     if i % 256 != 255 {
-        assert_eq!(
-            (&source_bit - FieldElement::ONE) * (&trace_table[(1, i + 0)] - &merkle_hash_points__y)
-                - &trace_table[(2, i + 0)] * (&trace_table[(0, i + 0)] - &merkle_hash_points__x),
-            FieldElement::ZERO
-        );
-        assert_eq!(
-            &trace_table[(2, i + 0)].square()
-                - (&source_bit - FieldElement::ONE)
-                    * (&trace_table[(0, i + 0)]
-                        + &merkle_hash_points__x
-                        + &trace_table[(0, i + 1)]),
-            FieldElement::ZERO
-        );
-        assert_eq!(
-            (&source_bit - FieldElement::ONE)
-                * (&trace_table[(1, i + 0)] + &trace_table[(1, i + 1)])
-                - &trace_table[(2, i + 0)] * (&trace_table[(0, i + 0)] - &trace_table[(0, i + 1)]),
-            FieldElement::ZERO
-        );
         assert!(source_bit == FieldElement::ZERO || source_bit == FieldElement::ONE);
-        assert_eq!(
-            &source_bit * (&trace_table[(0, i + 1)] - &trace_table[(0, i + 0)]),
-            FieldElement::ZERO
-        );
-        assert_eq!(
-            &source_bit * (&trace_table[(1, i + 1)] - &trace_table[(1, i + 0)]),
-            FieldElement::ZERO
-        );
+        if source_bit.is_zero() {
+            assert_eq!(
+                &trace_table[(1, i)] - &merkle_hash_points__y,
+                &trace_table[(2, i)] * (&trace_table[(0, i)] - &merkle_hash_points__x)
+            );
+            assert_eq!(
+                &trace_table[(2, i)].square(),
+                &trace_table[(0, i)] + &merkle_hash_points__x + &trace_table[(0, i + 1)]
+            );
+            assert_eq!(
+                &trace_table[(1, i)] + &trace_table[(1, i + 1)],
+                &trace_table[(2, i)] * (&trace_table[(0, i)] - &trace_table[(0, i + 1)]),
+            );
+        } else {
+            assert_eq!(trace_table[(0, i)], &trace_table[(0, i + 1)]);
+            assert_eq!(trace_table[(1, i)], &trace_table[(1, i + 1)]);
+        }
     }
     if (i % 256 == 0) && !(i % 512 == 256) {
-        assert_eq!(&trace_table[(0, i + 256)], &trace_table[(0, i + 255)]);
-        assert_eq!(&trace_table[(1, i + 256)], &trace_table[(1, i + 255)]);
+        assert_eq!(trace_table[(0, i + 256)], trace_table[(0, i + 255)]);
+        assert_eq!(trace_table[(1, i + 256)], trace_table[(1, i + 255)]);
     }
     if (i % 512 == 0) {
         assert_eq!(trace_table[(0, i)], shift_point.x);
-        assert_eq!(trace_table[(1, i)], &shift_point.y);
+        assert_eq!(trace_table[(1, i)], shift_point.y);
     }
-    if (i % 256 == 251) {
-        assert_eq!(trace_table[(3, i + 0)].clone(), FieldElement::ZERO);
-    }
-    if (i % 256 == 255) {
-        assert_eq!(trace_table[(3, i + 0)].clone(), FieldElement::ZERO);
+    if (i % 256 == 251) || (i % 256 == 255) {
+        assert!(trace_table[(3, i)].is_zero());
     }
 }
 
@@ -188,7 +175,7 @@ fn test_trace_table() {
             assert_eq!(
                 &hash_pool__hash__ec_subset_sum__bit
                     * (&trace_table[(8, i + 2)] - hash_pool_points__y)
-                    - &trace_table[(8, i + 1)] * (&trace_table[(8, i + 0)] - &hash_pool_points__x),
+                    - &trace_table[(8, i + 1)] * (&trace_table[(8, i)] - &hash_pool_points__x),
                 FieldElement::ZERO
             );
         }
@@ -197,9 +184,7 @@ fn test_trace_table() {
                 // here's the slope squaring.
                 &trace_table[(8, i + 1)] * &trace_table[(8, i + 1)]
                     - &hash_pool__hash__ec_subset_sum__bit
-                        * (&trace_table[(8, i + 0)]
-                            + &hash_pool_points__x
-                            + &trace_table[(8, i + 4)]),
+                        * (&trace_table[(8, i)] + &hash_pool_points__x + &trace_table[(8, i + 4)]),
                 FieldElement::ZERO
             );
         }
@@ -207,15 +192,14 @@ fn test_trace_table() {
             assert_eq!(
                 &hash_pool__hash__ec_subset_sum__bit
                     * (&trace_table[(8, i + 2)] + &trace_table[(8, i + 6)])
-                    - &trace_table[(8, i + 1)]
-                        * (&trace_table[(8, i + 0)] - &trace_table[(8, i + 4)]),
+                    - &trace_table[(8, i + 1)] * (&trace_table[(8, i)] - &trace_table[(8, i + 4)]),
                 FieldElement::ZERO
             );
         }
         if (i % 4 == 0) && !(i % 1024 == 1024 / 256 * 255) {
             assert_eq!(
                 &hash_pool__hash__ec_subset_sum__bit_neg
-                    * (&trace_table[(8, i + 4)] - &trace_table[(8, i + 0)]),
+                    * (&trace_table[(8, i + 4)] - &trace_table[(8, i)]),
                 FieldElement::ZERO
             );
         }
@@ -239,10 +223,7 @@ fn test_trace_table() {
             );
         }
         if (i % 2048 == 0) && !(false) {
-            assert_eq!(
-                &trace_table[(8, i + 0)] - &shift_point.x,
-                FieldElement::ZERO
-            );
+            assert_eq!(&trace_table[(8, i)] - &shift_point.x, FieldElement::ZERO);
         }
         // it looks like they're crammed a third pedersen hash into column 8?
         if (i % 2048 == 0) && !(false) {
@@ -286,44 +267,42 @@ fn test_trace_table() {
             assert_eq!( &state_transition__merkle_update__new_authentication__hashes__ec_subset_sum__bit * (&state_transition__merkle_update__new_authentication__hashes__ec_subset_sum__bit - FieldElement::ONE), FieldElement::ZERO);
         }
         if (i % 256 == 251) && !(false) {
-            assert_eq!(trace_table[(7, i + 0)].clone(), FieldElement::ZERO);
+            assert_eq!(trace_table[(7, i)].clone(), FieldElement::ZERO);
         }
         if (i % 256 == 255) && !(false) {
-            assert_eq!(trace_table[(7, i + 0)].clone(), FieldElement::ZERO);
+            assert_eq!(trace_table[(7, i)].clone(), FieldElement::ZERO);
         }
         if (true) && !(i % 256 == 255) {
             assert_eq!(
                 &state_transition__merkle_update__new_authentication__hashes__ec_subset_sum__bit
-                    * (&trace_table[(5, i + 0)] - &merkle_hash_points__y)
-                    - &trace_table[(6, i + 0)]
-                        * (&trace_table[(4, i + 0)] - &merkle_hash_points__x),
+                    * (&trace_table[(5, i)] - &merkle_hash_points__y)
+                    - &trace_table[(6, i)] * (&trace_table[(4, i)] - &merkle_hash_points__x),
                 FieldElement::ZERO
             );
         }
         if (true) && !(i % 256 == 255) {
             // slope squaring here.
-            assert_eq!( &trace_table[(6,i + 0)] * &trace_table[(6,i + 0)] - &state_transition__merkle_update__new_authentication__hashes__ec_subset_sum__bit * (&trace_table[(4,i + 0)] + &merkle_hash_points__x + &trace_table[(4,i + 1)]), FieldElement::ZERO);
+            assert_eq!( &trace_table[(6,i)] * &trace_table[(6,i)] - &state_transition__merkle_update__new_authentication__hashes__ec_subset_sum__bit * (&trace_table[(4,i)] + &merkle_hash_points__x + &trace_table[(4,i + 1)]), FieldElement::ZERO);
         }
         if (true) && !(i % 256 == 255) {
             assert_eq!(
                 &state_transition__merkle_update__new_authentication__hashes__ec_subset_sum__bit
-                    * (&trace_table[(5, i + 0)] + &trace_table[(5, i + 1)])
-                    - &trace_table[(6, i + 0)]
-                        * (&trace_table[(4, i + 0)] - &trace_table[(4, i + 1)]),
+                    * (&trace_table[(5, i)] + &trace_table[(5, i + 1)])
+                    - &trace_table[(6, i)] * (&trace_table[(4, i)] - &trace_table[(4, i + 1)]),
                 FieldElement::ZERO
             );
         }
         if (true) && !(i % 256 == 255) {
             assert_eq!(
                 &state_transition__merkle_update__new_authentication__hashes__ec_subset_sum__bit_neg
-                    * (&trace_table[(4, i + 1)] - &trace_table[(4, i + 0)]),
+                    * (&trace_table[(4, i + 1)] - &trace_table[(4, i)]),
                 FieldElement::ZERO
             );
         }
         if (true) && !(i % 256 == 255) {
             assert_eq!(
                 &state_transition__merkle_update__new_authentication__hashes__ec_subset_sum__bit_neg
-                    * (&trace_table[(5, i + 1)] - &trace_table[(5, i + 0)]),
+                    * (&trace_table[(5, i + 1)] - &trace_table[(5, i)]),
                 FieldElement::ZERO
             );
         }
@@ -340,16 +319,10 @@ fn test_trace_table() {
             );
         }
         if (i % 512 == 0) && !(false) {
-            assert_eq!(
-                &trace_table[(4, i + 0)] - &shift_point.x,
-                FieldElement::ZERO
-            );
+            assert_eq!(&trace_table[(4, i)] - &shift_point.x, FieldElement::ZERO);
         }
         if (i % 512 == 0) && !(false) {
-            assert_eq!(
-                &trace_table[(5, i + 0)] - &shift_point.y,
-                FieldElement::ZERO
-            );
+            assert_eq!(&trace_table[(5, i)] - &shift_point.y, FieldElement::ZERO);
         }
         if (i % 512 == 0) && !(i % 16384 == 16384 / 32 * 31 || i % 16384 == 16384 / 16 * 15) {
             assert_eq!(
@@ -483,9 +456,7 @@ fn test_trace_table() {
         if (i % 64 == 0) && !(i % 16384 == 16384 / 256 * 255) {
             assert_eq!(
                 &trace_table[(9, i + 16)] * &trace_table[(9, i + 16)]
-                    - (&trace_table[(9, i + 0)]
-                        + &trace_table[(9, i + 0)]
-                        + &trace_table[(9, i + 64)]),
+                    - (&trace_table[(9, i)] + &trace_table[(9, i)] + &trace_table[(9, i + 64)]),
                 FieldElement::ZERO
             );
         }
@@ -493,7 +464,7 @@ fn test_trace_table() {
             assert_eq!(
                 &trace_table[(9, i + 32)] + &trace_table[(9, i + 96)]
                     - &trace_table[(9, i + 16)]
-                        * (&trace_table[(9, i + 0)] - &trace_table[(9, i + 64)]),
+                        * (&trace_table[(9, i)] - &trace_table[(9, i + 64)]),
                 FieldElement::ZERO
             );
         }
@@ -576,7 +547,7 @@ fn test_trace_table() {
                 &sig_verify__exponentiate_key__bit
                     * (&trace_table[(9, i + 8)] - &trace_table[(9, i + 32)])
                     - &trace_table[(9, i + 40)]
-                        * (&trace_table[(9, i + 48)] - &trace_table[(9, i + 0)]),
+                        * (&trace_table[(9, i + 48)] - &trace_table[(9, i)]),
                 FieldElement::ZERO
             );
         }
@@ -585,7 +556,7 @@ fn test_trace_table() {
                 &trace_table[(9, i + 40)] * &trace_table[(9, i + 40)]
                     - &sig_verify__exponentiate_key__bit
                         * (&trace_table[(9, i + 48)]
-                            + &trace_table[(9, i + 0)]
+                            + &trace_table[(9, i)]
                             + &trace_table[(9, i + 112)]),
                 FieldElement::ZERO
             );
@@ -601,7 +572,7 @@ fn test_trace_table() {
         }
         if (i % 64 == 0) && !(i % 16384 == 16384 / 256 * 255) {
             assert_eq!(
-                &trace_table[(9, i + 56)] * (&trace_table[(9, i + 48)] - &trace_table[(9, i + 0)])
+                &trace_table[(9, i + 56)] * (&trace_table[(9, i + 48)] - &trace_table[(9, i)])
                     - FieldElement::ONE,
                 FieldElement::ZERO
             );
@@ -717,15 +688,15 @@ fn test_trace_table() {
         }
         if (i % 32768 == 0) && !(false) {
             assert_eq!(
-                &trace_table[(8, i + 27645)] - &trace_table[(9, i + 0)] * &trace_table[(9, i + 0)],
+                &trace_table[(8, i + 27645)] - &trace_table[(9, i)] * &trace_table[(9, i)],
                 FieldElement::ZERO
             );
         }
         if (i % 32768 == 0) && !(false) {
             assert_eq!(
                 &trace_table[(9, i + 32)] * &trace_table[(9, i + 32)]
-                    - (&trace_table[(9, i + 0)] * &trace_table[(8, i + 27645)]
-                        + &sig_config.alpha * &trace_table[(9, i + 0)]
+                    - (&trace_table[(9, i)] * &trace_table[(8, i + 27645)]
+                        + &sig_config.alpha * &trace_table[(9, i)]
                         + &sig_config.beta),
                 FieldElement::ZERO
             );
@@ -776,7 +747,7 @@ fn test_trace_table() {
         }
         if (i % 65536 == 0) && !(false) {
             assert_eq!(
-                &is_settlement * (&trace_table[(9, i + 0)] - &trace_table[(9, i + 16376)]),
+                &is_settlement * (&trace_table[(9, i)] - &trace_table[(9, i + 16376)]),
                 FieldElement::ZERO
             );
         }
@@ -788,7 +759,7 @@ fn test_trace_table() {
         }
         if (i % 65536 == 0) && !(false) {
             assert_eq!(
-                &is_settlement * (&trace_table[(9, i + 0)] - &trace_table[(9, i + 65528)]),
+                &is_settlement * (&trace_table[(9, i)] - &trace_table[(9, i + 65528)]),
                 FieldElement::ZERO
             );
         }
