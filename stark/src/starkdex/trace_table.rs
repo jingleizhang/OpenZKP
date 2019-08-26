@@ -239,13 +239,6 @@ fn test_trace_table() {
         let ecdsa_points__x = FieldElement::ONE;
         let state_transition__merkle_update__new_authentication__leaf_0 = FieldElement::ZERO;
 
-        let boundary_vault_id = FieldElement::ONE;
-        let boundary_base = FieldElement::ONE;
-        let boundary_amount0 = FieldElement::ONE;
-        let boundary_amount1 = FieldElement::ONE;
-        let boundary_token = FieldElement::ONE;
-        let boundary_key = FieldElement::ONE;
-
         let vault_shift = FieldElement::ONE;
 
         let trade_shift = FieldElement::ZERO;
@@ -371,22 +364,12 @@ fn test_trace_table() {
                     * (&sig_verify__exponentiate_generator__bit - FieldElement::ONE),
                 FieldElement::ZERO
             );
-        }
-        if (i % 32768 == 32768 / 256 * 251) {
-            assert_eq!(trace_table[(9, i + 20)].clone(), FieldElement::ZERO);
-        }
-        if (i % 32768 == 32768 / 256 * 255) {
-            assert_eq!(trace_table[(9, i + 20)].clone(), FieldElement::ZERO);
-        }
-        if (i % 128 == 0) && !(i % 32768 == 32768 / 256 * 256) {
             assert_eq!(
                 &sig_verify__exponentiate_generator__bit
                     * (&trace_table[(9, i + 36)] - ecdsa_points__y)
                     - &trace_table[(9, i + 100)] * (&trace_table[(9, i + 68)] - &ecdsa_points__x),
                 FieldElement::ZERO
             );
-        }
-        if (i % 128 == 0) && !(i % 32768 == 32768 / 256 * 256) {
             assert_eq!(
                 &trace_table[(9, i + 100)] * &trace_table[(9, i + 100)]
                     - &sig_verify__exponentiate_generator__bit
@@ -395,8 +378,6 @@ fn test_trace_table() {
                             + &trace_table[(9, i + 196)]),
                 FieldElement::ZERO
             );
-        }
-        if (i % 128 == 0) && !(i % 32768 == 32768 / 256 * 256) {
             assert_eq!(
                 &sig_verify__exponentiate_generator__bit
                     * (&trace_table[(9, i + 36)] + &trace_table[(9, i + 164)])
@@ -404,22 +385,16 @@ fn test_trace_table() {
                         * (&trace_table[(9, i + 68)] - &trace_table[(9, i + 196)]),
                 FieldElement::ZERO
             );
-        }
-        if (i % 128 == 0) && !(i % 32768 == 32768 / 256 * 256) {
             assert_eq!(
                 &trace_table[(9, i + 84)] * (&trace_table[(9, i + 68)] - &ecdsa_points__x)
                     - FieldElement::ONE,
                 FieldElement::ZERO
             );
-        }
-        if (i % 128 == 0) && !(i % 32768 == 32768 / 256 * 256) {
             assert_eq!(
                 &sig_verify__exponentiate_generator__bit_neg
                     * (&trace_table[(9, i + 196)] - &trace_table[(9, i + 68)]),
                 FieldElement::ZERO
             );
-        }
-        if (i % 128 == 0) && !(i % 32768 == 32768 / 256 * 256) {
             assert_eq!(
                 &sig_verify__exponentiate_generator__bit_neg
                     * (&trace_table[(9, i + 164)] - &trace_table[(9, i + 36)]),
@@ -548,18 +523,45 @@ fn test_trace_table() {
                     + &sig_config.beta
             );
         }
+        if (i % 32768 == 32768 / 256 * 251) {
+            assert_eq!(trace_table[(9, i + 20)].clone(), FieldElement::ZERO);
+        }
+        if (i % 32768 == 32768 / 256 * 255) {
+            assert_eq!(trace_table[(9, i + 20)].clone(), FieldElement::ZERO);
+        }
         if (i % 65536 == 0) {
             if is_settlement == FieldElement::ONE {
                 assert_eq!(
-                    &is_settlement
-                        * (&trace_table[(8, i + 7171)]
-                            - (((&trace_table[(6, i + 255)] * vault_shift
-                                + &trace_table[(6, i + 49407)])
-                                * &amount_shift
-                                + &trace_table[(9, i + 4)])
-                                * &amount_shift
-                                + &trace_table[(9, i + 32772)])
-                                * trade_shift),
+                    &trace_table[(8, i + 7171)]
+                        - (((&trace_table[(6, i + 255)] * vault_shift
+                            + &trace_table[(6, i + 49407)])
+                            * &amount_shift
+                            + &trace_table[(9, i + 4)])
+                            * &amount_shift
+                            + &trace_table[(9, i + 32772)])
+                            * trade_shift,
+                    FieldElement::ZERO
+                );
+                assert_eq!(
+                    &trace_table[(8, i + 3075)]
+                        - &trace_table[(8, i + 11267)]
+                        - (&trace_table[(8, i + 27651)] - &trace_table[(8, i + 19459)]),
+                    FieldElement::ZERO
+                );
+                assert_eq!(
+                    &trace_table[(8, i + 35843)]
+                        - &trace_table[(8, i + 44035)]
+                        - (&trace_table[(8, i + 60419)] - &trace_table[(8, i + 52227)]),
+                    FieldElement::ZERO
+                );
+                assert_eq!(
+                    &trace_table[(9, i + 4)]
+                        - (&trace_table[(8, i + 3075)] - &trace_table[(8, i + 11267)]),
+                    FieldElement::ZERO
+                );
+                assert_eq!(
+                    &trace_table[(9, i + 32772)]
+                        - (&trace_table[(8, i + 35843)] - &trace_table[(8, i + 44035)]),
                     FieldElement::ZERO
                 );
                 assert_eq!(trace_table[(8, i + 36867)], trace_table[(8, i + 8188)]);
@@ -575,57 +577,34 @@ fn test_trace_table() {
                 assert_eq!(trace_table[(8, i + 4099)], trace_table[(9, i + 32744)]);
                 assert_eq!(trace_table[(9, i + 32768)], trace_table[(9, i + 49144)]);
                 assert_eq!(trace_table[(8, i + 5123)], trace_table[(9, i + 49128)]);
-                assert_eq!(
-                    &is_settlement
-                        * (&trace_table[(8, i + 3075)]
-                            - &trace_table[(8, i + 11267)]
-                            - (&trace_table[(8, i + 27651)] - &trace_table[(8, i + 19459)])),
-                    FieldElement::ZERO
-                );
-                assert_eq!(
-                    &is_settlement
-                        * (&trace_table[(8, i + 35843)]
-                            - &trace_table[(8, i + 44035)]
-                            - (&trace_table[(8, i + 60419)] - &trace_table[(8, i + 52227)])),
-                    FieldElement::ZERO
-                );
-                assert_eq!(
-                    (&trace_table[(9, i + 4)]
-                        - (&trace_table[(8, i + 3075)] - &trace_table[(8, i + 11267)]))
-                        * &is_settlement,
-                    FieldElement::ZERO
-                );
-                assert_eq!(
-                    (&trace_table[(9, i + 32772)]
-                        - (&trace_table[(8, i + 35843)] - &trace_table[(8, i + 44035)]))
-                        * &is_settlement,
-                    FieldElement::ZERO
-                );
             }
 
-            assert_eq!(
-                &is_modification * (&trace_table[(9, i + 16376)] * &boundary_base - boundary_key),
-                FieldElement::ZERO
-            );
-            assert_eq!(
-                &is_modification * (&trace_table[(9, i + 16360)] * &boundary_base - boundary_token),
-                FieldElement::ZERO
-            );
-            assert_eq!(
-                &is_modification
-                    * (&trace_table[(8, i + 3075)] * &boundary_base - boundary_amount0),
-                FieldElement::ZERO
-            );
-            assert_eq!(
-                &is_modification
-                    * (&trace_table[(8, i + 11267)] * &boundary_base - boundary_amount1),
-                FieldElement::ZERO
-            );
-            assert_eq!(
-                &is_modification
-                    * (&trace_table[(6, i + 255)] * &boundary_base - boundary_vault_id),
-                FieldElement::ZERO
-            );
+            if is_modification == FieldElement::ONE {
+                let boundary_vault_id = FieldElement::ONE; // periodic_column
+                let boundary_base = FieldElement::ONE; // periodic_column
+                let boundary_amount0 = FieldElement::ONE; // periodic_column
+                let boundary_amount1 = FieldElement::ONE; // periodic_column
+                let boundary_token = FieldElement::ONE; // periodic_column
+                let boundary_key = FieldElement::ONE; // periodic_column
+
+                assert_eq!(&trace_table[(9, i + 16376)] * &boundary_base, boundary_key);
+                assert_eq!(
+                    &trace_table[(9, i + 16360)] * &boundary_base,
+                    boundary_token
+                );
+                assert_eq!(
+                    &trace_table[(8, i + 3075)] * &boundary_base,
+                    boundary_amount0
+                );
+                assert_eq!(
+                    &trace_table[(8, i + 11267)] * &boundary_base,
+                    boundary_amount1
+                );
+                assert_eq!(
+                    &trace_table[(6, i + 255)] * &boundary_base,
+                    boundary_vault_id
+                );
+            }
         }
         if (i % 8192 == 0) {
             assert_eq!(
