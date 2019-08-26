@@ -41,7 +41,7 @@ struct Point {
 fn test_hasher_1(trace_table: &TraceTable, i: usize) {
     // state_transition/merkle_update/prev_authentication/hashes/ec_subset_sum/bit =
     // column3_row0 - (column3_row1 + column3_row1)
-    let source_bit = &trace_table[(3, 0)] - trace_table[(3, 1)].double();
+    let source_bit = &trace_table[(3, i)] - trace_table[(3, i + 1)].double();
 
     let shift_point = Point {
         x: SHIFT_POINT.x,
@@ -99,7 +99,7 @@ fn test_hasher_1(trace_table: &TraceTable, i: usize) {
 fn test_hasher_2(trace_table: &TraceTable, i: usize) {
     // state_transition/merkle_update/new_authentication/hashes/ec_subset_sum/bit =
     // column7_row0 - (column7_row1 + column7_row1)
-    let source_bit = &trace_table[(7, 0)] - trace_table[(7, 1)].double();
+    let source_bit = &trace_table[(7, i)] - trace_table[(7, i + 1)].double();
 
     let shift_point = Point {
         x: SHIFT_POINT.x,
@@ -154,24 +154,77 @@ fn test_hasher_2(trace_table: &TraceTable, i: usize) {
     }
 }
 
-fn test_hasher_3(trace_table: &TraceTable, i: usize) {}
+fn test_hasher_3(trace_table: &TraceTable, i: usize) {
+    // hash_pool/hash/ec_subset_sum/bit = column8_row3 - (column8_row7 +
+    // column8_row7)
+    let source_bit = &trace_table[(8, i + 3)] - trace_table[(8, i + 7)].double();
+
+    let shift_point = Point {
+        x: FieldElement::ONE,
+        y: FieldElement::ONE,
+    };
+
+    let hash_pool_points__y = FieldElement::ONE;
+    let hash_pool_points__x = FieldElement::ONE;
+
+    if (i % 4 == 0) && (i / 4 % 256 != 255) {
+        assert!(source_bit == FieldElement::ZERO || source_bit == FieldElement::ONE);
+        if source_bit.is_zero() {
+            assert_eq!(trace_table[(8, i + 4)], &trace_table[(8, i)]);
+            assert_eq!(trace_table[(8, i + 6)], &trace_table[(8, i + 2)]);
+        } else {
+            assert_eq!(
+                &trace_table[(8, i + 2)] - hash_pool_points__y,
+                &trace_table[(8, i + 1)] * (&trace_table[(8, i)] - &hash_pool_points__x),
+            );
+            assert_eq!(
+                trace_table[(8, i + 1)].square(),
+                &trace_table[(8, i)] + &hash_pool_points__x + &trace_table[(8, i + 4)],
+            );
+            assert_eq!(
+                &trace_table[(8, i + 2)] + &trace_table[(8, i + 6)],
+                &trace_table[(8, i + 1)] * (&trace_table[(8, i)] - &trace_table[(8, i + 4)]),
+            );
+        }
+    }
+    if (i % 1024 == 0) && !(i % 2048 == 2048 / 2) {
+        assert_eq!(trace_table[(8, i + 1024)], trace_table[(8, i + 1020)]);
+    }
+    if (i % 1024 == 0) && !(i % 2048 == 2048 / 2) {
+        assert_eq!(
+            &trace_table[(8, i + 1026)] - &trace_table[(8, i + 1022)],
+            FieldElement::ZERO
+        );
+    }
+    if (i % 2048 == 0) {
+        assert_eq!(trace_table[(8, i)], shift_point.x);
+        assert_eq!(trace_table[(8, i + 2)], shift_point.y);
+    }
+    if (i % 4096 == 0) {
+        assert_eq!(
+            &trace_table[(8, i + 2044)] - &trace_table[(8, i + 2051)],
+            FieldElement::ZERO
+        );
+    }
+
+    if (i % 1024 == 4 * 251) || (i % 1024 == 4 * 255) {
+        assert_eq!(trace_table[(8, i + 3)].is_zero());
+    }
+}
 
 fn test_trace_table() {
     let trace_table = get_trace_table();
     for i in 0..trace_table.num_rows() {
-        test_trace_table_hash_pool(&trace_table, i);
+        test_hasher_1(&trace_table, i);
+        test_hasher_2(&trace_table, i);
+        test_hasher_3(&trace_table, i);
 
-        let hash_pool_points__y = FieldElement::ONE;
-        let hash_pool_points__x = FieldElement::ONE;
+        let is_settlement = FieldElement::ZERO; // periodic column from public input?
+        let is_modification = FieldElement::ZERO; // periodic column from public input
 
-        let is_settlement = FieldElement::ZERO;
-        let is_modification = FieldElement::ZERO;
         let amounts_range_check__bit_0 = FieldElement::ONE;
         let sig_verify__exponentiate_key__bit = FieldElement::ONE;
         let sig_verify__exponentiate_generator__bit = FieldElement::ONE;
-        let hash_pool__hash__ec_subset_sum__bit = FieldElement::ONE;
-        let hash_pool__hash__ec_subset_sum__bit_neg =
-            FieldElement::ONE - &hash_pool__hash__ec_subset_sum__bit;
         let state_transition__merkle_update__side_bit_extraction__bit_1 = FieldElement::ONE;
         let state_transition__merkle_update__side_bit_extraction__bit_0 = FieldElement::ZERO; // I think this is the negation of the above?
         let state_transition__merkle_update__prev_authentication__leaf_0 = FieldElement::ONE;
@@ -185,10 +238,6 @@ fn test_trace_table() {
                 x: FieldElement::ONE,
                 y: FieldElement::ONE,
             },
-        };
-        let shift_point = Point {
-            x: FieldElement::ONE,
-            y: FieldElement::ONE,
         };
         let sig_verify__doubling_key__x_squared = FieldElement::ZERO;
         let final_root = FieldElement::ONE;
@@ -228,86 +277,6 @@ fn test_trace_table() {
         let merkle_hash_points__x = FieldElement::ONE;
         let merkle_hash_points__y = FieldElement::ONE;
 
-        if (i % 4 == 0) && !(i % 1024 == 1024 / 256 * 255) {
-            assert_eq!(
-                &hash_pool__hash__ec_subset_sum__bit
-                    * (&hash_pool__hash__ec_subset_sum__bit - FieldElement::ONE),
-                FieldElement::ZERO
-            );
-        }
-        if (i % 1024 == 4 * 251) {
-            assert_eq!(trace_table[(8, i + 3)].clone(), FieldElement::ZERO);
-        }
-        if (i % 1024 == 4 * 255) {
-            assert_eq!(trace_table[(8, i + 3)].clone(), FieldElement::ZERO);
-        }
-        if (i % 4 == 0) && !(i % 1024 == 1024 / 256 * 255) {
-            assert_eq!(
-                &hash_pool__hash__ec_subset_sum__bit
-                    * (&trace_table[(8, i + 2)] - hash_pool_points__y)
-                    - &trace_table[(8, i + 1)] * (&trace_table[(8, i)] - &hash_pool_points__x),
-                FieldElement::ZERO
-            );
-        }
-        if (i % 4 == 0) && !(i % 1024 == 1024 / 256 * 255) {
-            assert_eq!(
-                // here's the slope squaring.
-                &trace_table[(8, i + 1)] * &trace_table[(8, i + 1)]
-                    - &hash_pool__hash__ec_subset_sum__bit
-                        * (&trace_table[(8, i)] + &hash_pool_points__x + &trace_table[(8, i + 4)]),
-                FieldElement::ZERO
-            );
-        }
-        if (i % 4 == 0) && !(i % 1024 == 1024 / 256 * 255) {
-            assert_eq!(
-                &hash_pool__hash__ec_subset_sum__bit
-                    * (&trace_table[(8, i + 2)] + &trace_table[(8, i + 6)])
-                    - &trace_table[(8, i + 1)] * (&trace_table[(8, i)] - &trace_table[(8, i + 4)]),
-                FieldElement::ZERO
-            );
-        }
-        if (i % 4 == 0) && !(i % 1024 == 1024 / 256 * 255) {
-            assert_eq!(
-                &hash_pool__hash__ec_subset_sum__bit_neg
-                    * (&trace_table[(8, i + 4)] - &trace_table[(8, i)]),
-                FieldElement::ZERO
-            );
-        }
-        if (i % 4 == 0) && !(i % 1024 == 1024 / 256 * 255) {
-            assert_eq!(
-                &hash_pool__hash__ec_subset_sum__bit_neg
-                    * (&trace_table[(8, i + 6)] - &trace_table[(8, i + 2)]),
-                FieldElement::ZERO
-            );
-        }
-        if (i % 1024 == 0) && !(i % 2048 == 2048 / 2) {
-            assert_eq!(
-                &trace_table[(8, i + 1024)] - &trace_table[(8, i + 1020)],
-                FieldElement::ZERO
-            );
-        }
-        if (i % 1024 == 0) && !(i % 2048 == 2048 / 2) {
-            assert_eq!(
-                &trace_table[(8, i + 1026)] - &trace_table[(8, i + 1022)],
-                FieldElement::ZERO
-            );
-        }
-        if (i % 2048 == 0) {
-            assert_eq!(&trace_table[(8, i)] - &shift_point.x, FieldElement::ZERO);
-        }
-        // it looks like they're crammed a third pedersen hash into column 8?
-        if (i % 2048 == 0) {
-            assert_eq!(
-                &trace_table[(8, i + 2)] - &shift_point.y,
-                FieldElement::ZERO
-            );
-        }
-        if (i % 4096 == 0) {
-            assert_eq!(
-                &trace_table[(8, i + 2044)] - &trace_table[(8, i + 2051)],
-                FieldElement::ZERO
-            );
-        }
         if (i % 512 == 0) && !(i % 16384 == 16384 / 32 * 31) {
             assert_eq!(
                 &state_transition__merkle_update__side_bit_extraction__bit_0
