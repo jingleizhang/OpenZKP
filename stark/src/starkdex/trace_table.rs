@@ -44,8 +44,8 @@ fn test_hasher_1(trace_table: &TraceTable, i: usize) {
     let source_bit = &trace_table[(3, i)] - trace_table[(3, i + 1)].double();
 
     let shift_point = Point {
-        x: SHIFT_POINT.x,
-        y: SHIFT_POINT.y,
+        x: FieldElement::ONE,
+        y: FieldElement::ZERO,
     };
 
     let merkle_hash_points__x = FieldElement::ONE;
@@ -59,7 +59,7 @@ fn test_hasher_1(trace_table: &TraceTable, i: usize) {
                 &trace_table[(2, i)] * (&trace_table[(0, i)] - &merkle_hash_points__x)
             );
             assert_eq!(
-                &trace_table[(2, i)].square(),
+                trace_table[(2, i)].square(),
                 &trace_table[(0, i)] + &merkle_hash_points__x + &trace_table[(0, i + 1)]
             );
             assert_eq!(
@@ -67,8 +67,8 @@ fn test_hasher_1(trace_table: &TraceTable, i: usize) {
                 &trace_table[(2, i)] * (&trace_table[(0, i)] - &trace_table[(0, i + 1)]),
             );
         } else {
-            assert_eq!(trace_table[(0, i)], &trace_table[(0, i + 1)]);
-            assert_eq!(trace_table[(1, i)], &trace_table[(1, i + 1)]);
+            assert_eq!(trace_table[(0, i)], trace_table[(0, i + 1)]);
+            assert_eq!(trace_table[(1, i)], trace_table[(1, i + 1)]);
             assert_eq!(trace_table[(2, i)], FieldElement::ZERO);
         }
     }
@@ -83,10 +83,10 @@ fn test_hasher_1(trace_table: &TraceTable, i: usize) {
     if (i % 256 == 251) || (i % 256 == 255) {
         assert!(trace_table[(3, i)].is_zero());
     }
-    // state_transition/merkle_update/side_bit_extraction/bit_1 = column6_row767 -
-    // (column6_row1279 + column6_row1279) state_transition/merkle_update/
-    // side_bit_extraction/bit_0 = column6_row255 - (column6_row767 +
-    // column6_row767)
+    // state_transition/merkle_update/side_bit_extraction/bit_1 =
+    // column6_row767 - (column6_row1279 + column6_row1279)
+    let state_transition__merkle_update__side_bit_extraction__bit_1 =
+        &trace_table[(6, i + 767)] - trace_table[(6, i + 767 + 512)].double();
     if (i % 512 == 0) && !(i % 16384 == 16384 / 32 * 31 || i % 16384 == 16384 / 16 * 15) {
         if state_transition__merkle_update__side_bit_extraction__bit_1.is_zero() {
             assert_eq!(trace_table[(0, i + 511)], trace_table[(3, i + 512)]);
@@ -102,8 +102,8 @@ fn test_hasher_2(trace_table: &TraceTable, i: usize) {
     let source_bit = &trace_table[(7, i)] - trace_table[(7, i + 1)].double();
 
     let shift_point = Point {
-        x: SHIFT_POINT.x,
-        y: SHIFT_POINT.y,
+        x: FieldElement::ONE,
+        y: FieldElement::ZERO,
     };
 
     let merkle_hash_points__x = FieldElement::ONE;
@@ -121,7 +121,7 @@ fn test_hasher_2(trace_table: &TraceTable, i: usize) {
                 &trace_table[(6, i)] * (&trace_table[(4, i)] - &merkle_hash_points__x),
             );
             assert_eq!(
-                &trace_table[(6, i)].square(),
+                trace_table[(6, i)].square(),
                 &trace_table[(4, i)] + &merkle_hash_points__x + &trace_table[(4, i + 1)],
             );
             assert_eq!(
@@ -138,10 +138,10 @@ fn test_hasher_2(trace_table: &TraceTable, i: usize) {
         assert_eq!(trace_table[(4, i)], shift_point.x);
         assert_eq!(trace_table[(5, i)], shift_point.y);
     }
-    // state_transition/merkle_update/side_bit_extraction/bit_1 = column6_row767 -
-    // (column6_row1279 + column6_row1279) state_transition/merkle_update/
-    // side_bit_extraction/bit_0 = column6_row255 - (column6_row767 +
-    // column6_row767)
+    // state_transition/merkle_update/side_bit_extraction/bit_1 =
+    // column6_row767 - (column6_row1279 + column6_row1279)
+    let state_transition__merkle_update__side_bit_extraction__bit_1 =
+        &trace_table[(6, i + 767)] - trace_table[(6, i + 767 + 512)].double();
     if i % 512 == 0 && i / 512 % 32 != 31 && i / 512 % 32 != 30 {
         if state_transition__merkle_update__side_bit_extraction__bit_1.is_zero() {
             assert_eq!(trace_table[(4, i + 511)], trace_table[(7, i + 512)]);
@@ -155,8 +155,8 @@ fn test_hasher_2(trace_table: &TraceTable, i: usize) {
 }
 
 fn test_hasher_3(trace_table: &TraceTable, i: usize) {
-    // hash_pool/hash/ec_subset_sum/bit = column8_row3 - (column8_row7 +
-    // column8_row7)
+    // hash_pool/hash/ec_subset_sum/bit =
+    // column8_row3 - (column8_row7 + column8_row7)
     let source_bit = &trace_table[(8, i + 3)] - trace_table[(8, i + 7)].double();
 
     let shift_point = Point {
@@ -170,8 +170,8 @@ fn test_hasher_3(trace_table: &TraceTable, i: usize) {
     if (i % 4 == 0) && (i / 4 % 256 != 255) {
         assert!(source_bit == FieldElement::ZERO || source_bit == FieldElement::ONE);
         if source_bit.is_zero() {
-            assert_eq!(trace_table[(8, i + 4)], &trace_table[(8, i)]);
-            assert_eq!(trace_table[(8, i + 6)], &trace_table[(8, i + 2)]);
+            assert_eq!(trace_table[(8, i + 4)], trace_table[(8, i)]);
+            assert_eq!(trace_table[(8, i + 6)], trace_table[(8, i + 2)]);
         } else {
             assert_eq!(
                 &trace_table[(8, i + 2)] - hash_pool_points__y,
@@ -208,7 +208,7 @@ fn test_hasher_3(trace_table: &TraceTable, i: usize) {
     }
 
     if (i % 1024 == 4 * 251) || (i % 1024 == 4 * 255) {
-        assert_eq!(trace_table[(8, i + 3)].is_zero());
+        assert!(trace_table[(8, i + 3)].is_zero());
     }
 }
 
@@ -226,7 +226,9 @@ fn test_trace_table() {
         let sig_verify__exponentiate_key__bit = FieldElement::ONE;
         let sig_verify__exponentiate_generator__bit = FieldElement::ONE;
         let state_transition__merkle_update__side_bit_extraction__bit_1 = FieldElement::ONE;
-        let state_transition__merkle_update__side_bit_extraction__bit_0 = FieldElement::ZERO; // I think this is the negation of the above?
+        // state_transition/merkle_update/side_bit_extraction/bit_0 =
+        // column6_row255 - (column6_row767 + column6_row767)
+        let state_transition__merkle_update__side_bit_extraction__bit_0 = FieldElement::ZERO;
         let state_transition__merkle_update__prev_authentication__leaf_0 = FieldElement::ONE;
         let state_transition__merkle_update__prev_authentication__sibling_0 = FieldElement::ZERO;
         let state_transition__merkle_update__new_authentication__sibling_0 = FieldElement::ZERO;
