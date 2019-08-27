@@ -608,6 +608,11 @@ fn test_trace_table() {
             }
         }
         if (i % 8192 == 0) {
+            // 1021 is 0 or 1
+            // 3075 is 0 if 1021 isn't
+            // 5117 is 0 if 1021 isn't
+            // if 1021 is 0, then one of 3075 or 5117 is 0.
+            // I think these together imply exactly one of three is non-zero?
             assert_eq!(
                 &trace_table[(8, i + 1021)] * (FieldElement::ONE - &trace_table[(8, i + 1021)]),
                 FieldElement::ZERO
