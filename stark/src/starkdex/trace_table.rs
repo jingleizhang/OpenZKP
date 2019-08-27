@@ -214,7 +214,6 @@ fn test_trace_table() {
         let is_settlement = FieldElement::ZERO; // periodic column from public input?
         let is_modification = FieldElement::ZERO; // periodic column from public input
 
-        let amounts_range_check__bit_0 = FieldElement::ONE;
         let state_transition__merkle_update__side_bit_extraction__bit_1 = FieldElement::ONE;
         // state_transition/merkle_update/side_bit_extraction/bit_0 =
         // column6_row255 - (column6_row767 + column6_row767)
@@ -231,10 +230,7 @@ fn test_trace_table() {
                 y: FieldElement::ONE,
             },
         };
-        let sig_verify__doubling_key__x_squared = FieldElement::ZERO;
         let final_root = FieldElement::ONE;
-        let ecdsa_points__y = FieldElement::ONE;
-        let ecdsa_points__x = FieldElement::ONE;
         let state_transition__merkle_update__new_authentication__leaf_0 = FieldElement::ZERO;
 
         // These are in the oods values...!?!?
@@ -305,16 +301,21 @@ fn test_trace_table() {
         }
         // these signify hash ends...
         if (i % 16384 == 16384 / 256 * 251) {
-            assert_eq!(trace_table[(9, i + 24)].clone(), FieldElement::ZERO);
+            assert_eq!(trace_table[(9, i + 24)], FieldElement::ZERO);
         }
         if (i % 16384 == 16384 / 256 * 255) {
-            assert_eq!(trace_table[(9, i + 24)].clone(), FieldElement::ZERO);
+            assert_eq!(trace_table[(9, i + 24)], FieldElement::ZERO);
         }
         if (i % 16384 == 16384 / 32 * path_length) {
-            assert_eq!(trace_table[(6, i + 255)].clone(), FieldElement::ZERO);
+            assert_eq!(trace_table[(6, i + 255)], FieldElement::ZERO);
         }
 
+        // these two perform a range check somehow?
+        // trace_table[(9, i + 4)] is being shifted over every 128 rows.
         if (i % 128 == 0) && !(i % 8192 == 8192 / 64 * 63) {
+            // amounts_range_check/bit_0 = column9_row4 - (column9_row132 + column9_row132)
+            let amounts_range_check__bit_0 =
+                &trace_table[(9, i + 4)] - trace_table[(9, i + 132)].double();
             assert_eq!(
                 &amounts_range_check__bit_0 * &amounts_range_check__bit_0
                     - &amounts_range_check__bit_0,
@@ -322,17 +323,98 @@ fn test_trace_table() {
             );
         }
         if (i % 8192 == 8192 / 64 * 63) {
-            assert_eq!(trace_table[(9, i + 4)].clone(), FieldElement::ZERO);
+            assert_eq!(trace_table[(9, i + 4)], FieldElement::ZERO);
         }
+
+        // Uses every 6 / 64 rows to compute n * g. Takes 256 repititions to finish.
+        if (i % 64 == 0) && !(i % 64 * 256 == 64 * 255) {
+            // we are using repeated squaring to compute x^n. here.
+            // // sig_verify/exponentiate_key/bit = column9_row24 - (column9_row88 +
+            // column9_row88)
+            let sig_verify__exponentiate_key__bit = FieldElement::ONE;
+            let sig_verify__exponentiate_key__bit_neg =
+                FieldElement::ONE - &sig_verify__exponentiate_key__bit;
+
+            // trace_table[(9, i + 24)] is the source or something?
+
+            // trace_table[(9, i + 8)] is the x coordinate
+            // trace_table[(9, i + 40)] is slope
+            // trace_table[(9, i + 48)] is the y coordinate
+            // here were are adding an elliptic curve points?
+            assert!(
+                sig_verify__exponentiate_key__bit == FieldElement::ZERO
+                    || sig_verify__exponentiate_key__bit == FieldElement::ONE
+            );
+            if sig_verify__exponentiate_key__bit == FieldElement::ONE {
+                assert_eq!(
+                    &trace_table[(9, i + 8)] - &trace_table[(9, i + 32)],
+                    &trace_table[(9, i + 40)] * (&trace_table[(9, i + 48)] - &trace_table[(9, i)])
+                );
+            } else {
+                assert!(trace_table[(9, i + 40)].is_zero());
+                assert_eq!(trace_table[(9, i + 112)], trace_table[(9, i + 48)]);
+                assert_eq!(trace_table[(9, i + 72)], trace_table[(9, i + 8)]);
+            }
+            assert_eq!(
+                trace_table[(9, i + 40)].square()
+                    - &sig_verify__exponentiate_key__bit
+                        * (&trace_table[(9, i + 48)]
+                            + &trace_table[(9, i)]
+                            + &trace_table[(9, i + 112)]),
+                FieldElement::ZERO
+            );
+            assert_eq!(
+                &sig_verify__exponentiate_key__bit
+                    * (&trace_table[(9, i + 8)] + &trace_table[(9, i + 72)])
+                    - &trace_table[(9, i + 40)]
+                        * (&trace_table[(9, i + 48)] - &trace_table[(9, i + 112)]),
+                FieldElement::ZERO
+            );
+            assert_eq!(
+                &trace_table[(9, i + 56)] * (&trace_table[(9, i + 48)] - &trace_table[(9, i)])
+                    - FieldElement::ONE,
+                FieldElement::ZERO
+            );
+            // this is the slope when doubling an elliptic curve point.
+            // sig_verify/doubling_key/x_squared = column9_row0 * column9_row0
+            // trace_table[(9, i)] is the x coordinate
+            // trace_table[(9, i + 32)] is the y coordinate
+            // trace_table[(9, i + 96)] is the next y coordinate
+            // trace_table[(9, i + 16)] is the slope
+            let doubling_point_slope = &trace_table[(9, i + 16)];
+            let sig_verify__doubling_key__x_squared = trace_table[(9, i)].square();
+            assert_eq!(
+                &sig_verify__doubling_key__x_squared
+                    + &sig_verify__doubling_key__x_squared
+                    + &sig_verify__doubling_key__x_squared
+                    + &sig_config.alpha,
+                (&trace_table[(9, i + 32)] + &trace_table[(9, i + 32)]) * doubling_point_slope
+            );
+            assert_eq!(
+                trace_table[(9, i + 64)],
+                doubling_point_slope.square() - &trace_table[(9, i)] - &trace_table[(9, i)],
+            );
+            assert_eq!(
+                trace_table[(9, i + 96)],
+                doubling_point_slope * (&trace_table[(9, i)] - &trace_table[(9, i + 64)])
+                    - &trace_table[(9, i + 32)]
+            );
+        }
+
+        // This usees the product from above to do something.
         if (i % 128 == 0) && !(i % 32768 == 32768 / 256 * 256) {
             let sig_verify__exponentiate_generator__bit = FieldElement::ONE;
             let sig_verify__exponentiate_generator__bit_neg =
                 FieldElement::ONE - &sig_verify__exponentiate_generator__bit;
-            assert_eq!(
-                &sig_verify__exponentiate_generator__bit
-                    * (&sig_verify__exponentiate_generator__bit - FieldElement::ONE),
-                FieldElement::ZERO
+
+            let ecdsa_points__y = FieldElement::ONE;
+            let ecdsa_points__x = FieldElement::ONE;
+
+            assert!(
+                sig_verify__exponentiate_generator__bit == FieldElement::ZERO
+                    || sig_verify__exponentiate_generator__bit == FieldElement::ONE
             );
+
             assert_eq!(
                 &sig_verify__exponentiate_generator__bit
                     * (&trace_table[(9, i + 36)] - ecdsa_points__y)
@@ -370,73 +452,7 @@ fn test_trace_table() {
                 FieldElement::ZERO
             );
         }
-        if (i % 64 == 0) && !(i % 16384 == 16384 / 256 * 255) {
-            let sig_verify__exponentiate_key__bit = FieldElement::ONE;
-            let sig_verify__exponentiate_key__bit_neg =
-                FieldElement::ONE - &sig_verify__exponentiate_key__bit;
-            assert_eq!(
-                &sig_verify__exponentiate_key__bit
-                    * (&sig_verify__exponentiate_key__bit - FieldElement::ONE),
-                FieldElement::ZERO
-            );
-            assert_eq!(
-                &sig_verify__exponentiate_key__bit
-                    * (&trace_table[(9, i + 8)] - &trace_table[(9, i + 32)])
-                    - &trace_table[(9, i + 40)]
-                        * (&trace_table[(9, i + 48)] - &trace_table[(9, i)]),
-                FieldElement::ZERO
-            );
-            assert_eq!(
-                &trace_table[(9, i + 40)] * &trace_table[(9, i + 40)]
-                    - &sig_verify__exponentiate_key__bit
-                        * (&trace_table[(9, i + 48)]
-                            + &trace_table[(9, i)]
-                            + &trace_table[(9, i + 112)]),
-                FieldElement::ZERO
-            );
-            assert_eq!(
-                &sig_verify__exponentiate_key__bit
-                    * (&trace_table[(9, i + 8)] + &trace_table[(9, i + 72)])
-                    - &trace_table[(9, i + 40)]
-                        * (&trace_table[(9, i + 48)] - &trace_table[(9, i + 112)]),
-                FieldElement::ZERO
-            );
-            assert_eq!(
-                &trace_table[(9, i + 56)] * (&trace_table[(9, i + 48)] - &trace_table[(9, i)])
-                    - FieldElement::ONE,
-                FieldElement::ZERO
-            );
-            assert_eq!(
-                &sig_verify__exponentiate_key__bit_neg
-                    * (&trace_table[(9, i + 112)] - &trace_table[(9, i + 48)]),
-                FieldElement::ZERO
-            );
-            assert_eq!(
-                &sig_verify__exponentiate_key__bit_neg
-                    * (&trace_table[(9, i + 72)] - &trace_table[(9, i + 8)]),
-                FieldElement::ZERO
-            );
-            assert_eq!(
-                &sig_verify__doubling_key__x_squared
-                    + &sig_verify__doubling_key__x_squared
-                    + &sig_verify__doubling_key__x_squared
-                    + &sig_config.alpha
-                    - (&trace_table[(9, i + 32)] + &trace_table[(9, i + 32)])
-                        * &trace_table[(9, i + 16)],
-                FieldElement::ZERO
-            );
-            assert_eq!(
-                &trace_table[(9, i + 16)] * &trace_table[(9, i + 16)]
-                    - (&trace_table[(9, i)] + &trace_table[(9, i)] + &trace_table[(9, i + 64)]),
-                FieldElement::ZERO
-            );
-            assert_eq!(
-                &trace_table[(9, i + 32)] + &trace_table[(9, i + 96)]
-                    - &trace_table[(9, i + 16)]
-                        * (&trace_table[(9, i)] - &trace_table[(9, i + 64)]),
-                FieldElement::ZERO
-            );
-        }
+
         // this has to do with verifying signatures.
         if (i % 32768 == 0) {
             assert_eq!(trace_table[(9, i + 68)], sig_config.shift_point.x);
@@ -515,7 +531,7 @@ fn test_trace_table() {
                         - (((&trace_table[(6, i + 255)] * vault_shift
                             + &trace_table[(6, i + 49407)])
                             * &amount_shift
-                            + &trace_table[(9, i + 4)])
+                            + &trace_table[(9, i + 4)]) // this is the amount that is shifted over?
                             * &amount_shift
                             + &trace_table[(9, i + 32772)])
                             * trade_shift,
