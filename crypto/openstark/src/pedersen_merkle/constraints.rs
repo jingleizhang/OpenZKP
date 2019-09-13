@@ -1,5 +1,5 @@
 use crate::{
-    constraint::Constraint,
+    constraint::constraint::Constraint,
     pedersen_merkle::{
         inputs::PublicInput,
         periodic_columns::{
@@ -7,11 +7,11 @@ use crate::{
         },
     },
     polynomial::{DensePolynomial, SparsePolynomial},
-    expression::Expression,
-    expression::Other::X,
-    expression::Other::PeriodicColumn,
-    expression::Other::Constant,
-    expression::Term::Trace,
+    constraint::expression::Expression,
+    constraint::expression::Other::X,
+    constraint::expression::Other::PeriodicColumn,
+    constraint::expression::Other::Constant,
+    constraint::expression::Term::Trace,
 };
 use elliptic_curve::Affine;
 use primefield::FieldElement;

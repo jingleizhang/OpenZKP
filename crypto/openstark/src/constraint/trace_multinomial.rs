@@ -1,6 +1,6 @@
 use crate::{
-    expression::{Expression, Operation, Other, Term},
-    fraction::Fraction,
+    constraint::expression::{Expression, Operation, Other, Term},
+    constraint::fraction::Fraction,
     polynomial::{DensePolynomial, SparsePolynomial},
 };
 use std::{

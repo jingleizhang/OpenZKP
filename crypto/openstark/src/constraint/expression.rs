@@ -1,7 +1,7 @@
 use crate::{
-    fraction::{from, Fraction},
+    constraint::fraction::{from, Fraction},
     polynomial::{DensePolynomial, SparsePolynomial},
-    trace_multinomial::TraceMultinomial,
+    constraint::trace_multinomial::TraceMultinomial,
 };
 use primefield::FieldElement;
 use std::{

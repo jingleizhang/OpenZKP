@@ -1,5 +1,5 @@
 use crate::{
-    expression::{Expression, Other, Term},
+    constraint::expression::{Expression, Other, Term},
     polynomial::SparsePolynomial,
 };
 use primefield::FieldElement;

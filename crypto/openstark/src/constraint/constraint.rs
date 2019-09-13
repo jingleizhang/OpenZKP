@@ -1,5 +1,5 @@
 use crate::{
-    expression::{
+    constraint::expression::{
         Expression,
         Other::{Constant, X},
     },

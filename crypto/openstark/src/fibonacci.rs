@@ -1,7 +1,7 @@
 use crate::{
     channel::*,
-    constraint::Constraint,
-    expression::{
+    constraint::constraint::Constraint,
+    constraint::expression::{
         Expression,
         Other::{Constant, X},
         Term::{self, Trace},

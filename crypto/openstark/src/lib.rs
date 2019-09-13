@@ -38,15 +38,12 @@
 #![cfg_attr(feature = "std", warn(missing_debug_implementations,))]
 
 mod channel;
-mod constraint;
-mod expression;
 pub mod fibonacci;
-mod fraction;
 mod polynomial;
 mod proof_of_work;
 mod proof_params;
-mod trace_multinomial;
 mod verifier;
+mod constraint;
 
 pub use channel::{ProverChannel, VerifierChannel};
 pub use proof_params::ProofParams;
@@ -61,7 +58,7 @@ extern crate no_std_compat as std;
 // requires std. TODO: Make it work without std.
 //
 // Optional prover functionality. Note that prover requires std.
-// #[cfg(feature = "prover")]
+#[cfg(feature = "prover")]
 pub mod pedersen_merkle;
 #[cfg(feature = "prover")]
 mod proofs;
