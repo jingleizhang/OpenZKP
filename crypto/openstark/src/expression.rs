@@ -98,7 +98,7 @@ impl Expression {
             if numerator.len() < 20 {
                 increment *= numerator;
             } else {
-                increment *= * DensePolynomial::from(numerator);
+                increment *= DensePolynomial::from(numerator);
             }
             for factor in coefficients.denominator {
                 increment /= factor;
