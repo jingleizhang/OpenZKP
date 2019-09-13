@@ -1,12 +1,7 @@
 use crate::{
     channel::{ProverChannel, RandomGenerator, Writable},
-    constraint::{combine_constraints, Constraint},
-    hash::Hash,
-    hashable::Hashable,
-    masked_keccak::MaskedKeccak,
-    merkle_tree::{self, VectorCommitment},
-    mmap_vec::MmapVec,
     check_proof,
+    constraint::{combine_constraints, Constraint},
     polynomial::{DensePolynomial, SparsePolynomial},
     proof_of_work,
     proof_params::ProofParams,
@@ -245,15 +240,15 @@ where
     decommit_fri_layers_and_trees(fri_trees.as_slice(), query_indices.as_slice(), &mut proof);
 
     // Verify proof
-    info!("Verify proof.");
-    assert!(check_proof(
-        proof.proof.as_slice(),
-        constraints,
-        public,
-        params,
-        trace.num_columns(),
-        trace.num_rows()
-    ));
+    // info!("Verify proof.");
+    // assert!(check_proof(
+    //     proof.proof.as_slice(),
+    //     constraints,
+    //     public,
+    //     params,
+    //     trace.num_columns(),
+    //     trace.num_rows()
+    // ));
 
     // Q.E.D.
     // TODO: Return bytes, or a result structure
@@ -297,7 +292,8 @@ pub(crate) fn get_constraint_polynomials(
             .eval_on_domain(&trace_getter);
 
     // assert_eq!(constraint_polynomial.len(), 2 * trace_length);
-    // assert_eq!(constraint_polynomial.evaluate(&FieldElement::GENERATOR), FieldElement::ZERO);
+    // assert_eq!(constraint_polynomial.evaluate(&FieldElement::GENERATOR),
+    // FieldElement::ZERO);
     let mut constraint_polynomials: Vec<Vec<FieldElement>> = vec![vec![]; constraints_degree_bound];
     for chunk in constraint_polynomial
         .coefficients()

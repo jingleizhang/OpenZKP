@@ -7,7 +7,11 @@ use crate::{
         },
     },
     polynomial::{DensePolynomial, SparsePolynomial},
-    rational_expression::RationalExpression::{self, Constant, PeriodicColumn, Trace, X},
+    expression::Expression,
+    expression::Other::X,
+    expression::Other::PeriodicColumn,
+    expression::Other::Constant,
+    expression::Term::Trace,
 };
 use elliptic_curve::Affine;
 use primefield::FieldElement;
@@ -18,6 +22,8 @@ use u256::U256;
 // TODO: Naming
 #[allow(clippy::module_name_repetitions)]
 pub fn get_pedersen_merkle_constraints(public_input: &PublicInput) -> Vec<Constraint> {
+    println!("asdfasdfasdf");
+
     let path_length = public_input.path_length;
     let trace_length = path_length * 256;
     let root = public_input.root.clone();
@@ -25,15 +31,15 @@ pub fn get_pedersen_merkle_constraints(public_input: &PublicInput) -> Vec<Constr
     let field_element_bits = 252;
 
     let trace_generator = Constant(FieldElement::root(trace_length).unwrap());
-
-    let no_rows = RationalExpression::from(1);
+    println!("asdasdfasdffasdfasdf");
+    let no_rows = Expression::from(1);
     let first_row = X - trace_generator.pow(0);
     let last_row = X - trace_generator.pow(trace_length - 1);
-    let every_row = X.pow(trace_length) - 1.into();
+    let every_row: Expression = X.pow(trace_length) - Expression::from(1);
     let hash_end_rows = X.pow(path_length) - trace_generator.pow(path_length * (trace_length - 1));
     let field_element_end_rows =
         X.pow(path_length) - trace_generator.pow(path_length * field_element_bits);
-    let hash_start_rows = X.pow(path_length) - 1.into();
+    let hash_start_rows: Expression = X.pow(path_length) - Expression::from(1);
 
     let (shift_point_x, shift_point_y) = match SHIFT_POINT {
         Affine::Zero => panic!(),
@@ -57,47 +63,49 @@ pub fn get_pedersen_merkle_constraints(public_input: &PublicInput) -> Vec<Constr
         path_length,
     ));
 
-    let left_bit = Trace(0, 0) - Trace(0, 1) * 2.into();
-    let right_bit = Trace(4, 0) - Trace(4, 1) * 2.into();
+    let left_bit: Expression = Trace(0, 0) - Trace(0, 1) * Expression::from(2);
+    let right_bit: Expression = Trace(4, 0) - Trace(4, 1) * Expression::from(2);
+
+    println!("asdfasdfasdf");
 
     vec![
         Constraint {
-            base:        Trace(0, 0),
+            base:        Expression::Term(Trace(0, 0)),
             numerator:   no_rows.clone(),
             denominator: no_rows.clone(),
         },
         Constraint {
-            base:        Trace(1, 0),
+            base:        Expression::Term(Trace(1, 0)),
             numerator:   no_rows.clone(),
             denominator: no_rows.clone(),
         },
         Constraint {
-            base:        Trace(2, 0),
+            base:        Expression::Term(Trace(2, 0)),
             numerator:   no_rows.clone(),
             denominator: no_rows.clone(),
         },
         Constraint {
-            base:        Trace(3, 0),
+            base:        Expression::Term(Trace(3, 0)),
             numerator:   no_rows.clone(),
             denominator: no_rows.clone(),
         },
         Constraint {
-            base:        Trace(4, 0),
+            base:        Expression::Term(Trace(4, 0)),
             numerator:   no_rows.clone(),
             denominator: no_rows.clone(),
         },
         Constraint {
-            base:        Trace(5, 0),
+            base:        Expression::Term(Trace(5, 0)),
             numerator:   no_rows.clone(),
             denominator: no_rows.clone(),
         },
         Constraint {
-            base:        Trace(6, 0),
+            base:        Expression::Term(Trace(6, 0)),
             numerator:   no_rows.clone(),
             denominator: no_rows.clone(),
         },
         Constraint {
-            base:        Trace(7, 0),
+            base:        Expression::Term(Trace(7, 0)),
             numerator:   no_rows.clone(),
             denominator: no_rows.clone(),
         },
@@ -128,7 +136,7 @@ pub fn get_pedersen_merkle_constraints(public_input: &PublicInput) -> Vec<Constr
             denominator: hash_start_rows.clone(),
         },
         Constraint {
-            base:        left_bit.clone() * (left_bit.clone() - 1.into()),
+            base:        left_bit.clone() * (left_bit.clone() - Expression::from(1)),
             numerator:   hash_end_rows.clone(),
             denominator: every_row.clone(),
         },
@@ -163,17 +171,17 @@ pub fn get_pedersen_merkle_constraints(public_input: &PublicInput) -> Vec<Constr
             denominator: every_row.clone(),
         },
         Constraint {
-            base:        Trace(0, 0),
+            base:        Expression::Term(Trace(0, 0)),
             numerator:   no_rows.clone(),
             denominator: field_element_end_rows.clone(),
         },
         Constraint {
-            base:        Trace(0, 0),
+            base:        Expression::Term(Trace(0, 0)),
             numerator:   no_rows.clone(),
             denominator: hash_end_rows.clone(),
         },
         Constraint {
-            base:        right_bit.clone() * (right_bit.clone() - 1.into()),
+            base:        right_bit.clone() * (right_bit.clone() - Expression::from(1)),
             numerator:   hash_end_rows.clone(),
             denominator: every_row.clone(),
         },
@@ -208,12 +216,12 @@ pub fn get_pedersen_merkle_constraints(public_input: &PublicInput) -> Vec<Constr
             denominator: every_row.clone(),
         },
         Constraint {
-            base:        Trace(4, 0),
+            base:        Expression::Term(Trace(4, 0)),
             numerator:   no_rows.clone(),
             denominator: field_element_end_rows.clone(),
         },
         Constraint {
-            base:        Trace(4, 0),
+            base:        Expression::Term(Trace(4, 0)),
             numerator:   no_rows.clone(),
             denominator: hash_end_rows.clone(),
         },
@@ -233,7 +241,6 @@ mod tests {
     };
 
     // TODO: Implement verifier and re-enable
-    #[ignore]
     #[test]
     fn short_pedersen_merkle() {
         let public_input = SHORT_PUBLIC_INPUT;
