@@ -1,12 +1,8 @@
 use crate::{
     channel::*,
     constraint::{
-        constraint::Constraint,
-        expression::{
-            Expression,
-            Other::{Constant, X},
-            Term::{self, Trace},
-        },
+        Constraint,
+        Term, Trace, Constant, X, Expression,
     },
     polynomial::SparsePolynomial,
 };

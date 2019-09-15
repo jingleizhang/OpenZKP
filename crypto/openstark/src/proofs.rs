@@ -1,7 +1,7 @@
 use crate::{
     channel::{ProverChannel, RandomGenerator, Writable},
     check_proof,
-    constraint::constraint::{combine_constraints, Constraint},
+    constraint::{combine_constraints, Constraint},
     polynomial::{DensePolynomial, SparsePolynomial},
     proof_of_work,
     proof_params::ProofParams,

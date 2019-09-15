@@ -1,6 +1,6 @@
 use crate::{
-    constraint::expression::{
-        Expression,
+    constraint::expression,
+    constraint::expression::{Expression,
         Other::{Constant, X},
     },
     polynomial::SparsePolynomial,

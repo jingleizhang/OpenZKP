@@ -1,11 +1,7 @@
 use crate::{
     constraint::{
-        constraint::Constraint,
-        expression::{
-            Expression,
-            Other::{Constant, PeriodicColumn, X},
-            Term::Trace,
-        },
+        Constraint,
+        Term, Trace, Constant, X, Expression, Other, PeriodicColumn,
     },
     pedersen_merkle::{
         inputs::PublicInput,

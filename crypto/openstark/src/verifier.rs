@@ -1,6 +1,6 @@
 use crate::{
     channel::*,
-    constraint::constraint::{combine_constraints, Constraint},
+    constraint::{combine_constraints, Constraint},
     polynomial::DensePolynomial,
     proof_of_work,
     proof_params::ProofParams,

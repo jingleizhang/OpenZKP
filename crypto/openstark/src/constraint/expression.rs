@@ -12,6 +12,19 @@ use std::{
     ops::{Add, Div, Mul, Sub},
 };
 
+enum PolynomialExpression {
+    X,
+    Constant,
+    PeriodicColumn,
+    Operation(Op<Self>),
+}
+
+enum TraceExpression {
+    PolynomialExpression(PolynomialExpression),
+    Trace(usize, isize),
+    Operation(Op<Self>),
+}
+
 #[derive(Clone, Debug)]
 // TODO: maybe turn these all into sparse polynomials immediately?
 pub enum Other {
@@ -30,6 +43,15 @@ pub enum Term {
 pub enum Expression {
     Term(Term),
     Operation(Operation),
+}
+
+#[derive(Clone, Debug)]
+pub enum Op<T> {
+    Pow(Box<Term>, usize),
+    Neg(Box<T>),
+    Add(Box<T>, Box<T>),
+    Mul(Box<T>, Box<T>),
+    Div(Box<T>, Box<T>),
 }
 
 #[derive(Clone, Debug)]
