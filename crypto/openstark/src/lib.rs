@@ -38,12 +38,12 @@
 #![cfg_attr(feature = "std", warn(missing_debug_implementations,))]
 
 mod channel;
+mod constraint;
 pub mod fibonacci;
 mod polynomial;
 mod proof_of_work;
 mod proof_params;
 mod verifier;
-mod constraint;
 
 pub use channel::{ProverChannel, VerifierChannel};
 pub use proof_params::ProofParams;

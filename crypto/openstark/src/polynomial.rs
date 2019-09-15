@@ -281,7 +281,7 @@ impl SparsePolynomial {
             1 => {
                 let (degree, coefficient) = self.0.iter().next().unwrap();
                 Self::new(&[(coefficient.pow(n), n * degree)])
-            },
+            }
             _ => panic!(),
         }
     }
