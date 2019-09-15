@@ -1,9 +1,6 @@
 use crate::{
     channel::*,
-    constraint::{
-        Constraint,
-        Term, Trace, Constant, X, Expression,
-    },
+    constraint::{Constant, Constraint, Expression, Term, Trace, X},
     polynomial::SparsePolynomial,
 };
 use primefield::FieldElement;
