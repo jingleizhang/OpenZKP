@@ -92,14 +92,14 @@ impl Expression {
         let mut divisors: BTreeSet<SparsePolynomial> = BTreeSet::new();
         for (i, (indices, coefficients)) in multinomial.0.iter().enumerate() {
             let numerator = SparsePolynomial::from(coefficients.numerator.clone());
-            // println!("{:?}", indices.clone());
-            // println!("# numerator terms = {:?}", numerator.len());
-            // println!("numerator degree = {:?}", numerator.degree());
-            // println!(
-            //     "# of factors in denominator = {:?}",
-            //     coefficients.denominator.len()
-            // );
-            // println!("");
+            println!("{:?}", indices.clone());
+            println!("# numerator terms = {:?}", numerator.len());
+            println!("numerator degree = {:?}", numerator.degree());
+            println!(
+                "# of factors in denominator = {:?}",
+                coefficients.denominator.len()
+            );
+            println!("");
 
             match indices.len() {
                 0 => {
@@ -121,7 +121,7 @@ impl Expression {
                 2 => {
                     if indices[0] != last_outer_indices {
                         // panic!();
-                        println!("last_outer_indices = {:?}", last_outer_indices);
+                        // println!("last_outer_indices = {:?}", last_outer_indices);
                         let (i, j) = last_outer_indices;
                         let mut semi_result = trace_table(i, j) * partial_result;
                         for divisor in &divisors {
@@ -147,9 +147,9 @@ impl Expression {
                         // panic!();
                         increment *= factor.clone();
                     }
-                    println!("divisors = {:?}", divisors);
+                    // println!("divisors = {:?}", divisors);
                     divisors.extend(coefficients.denominator.clone());
-                    println!("after extending, divisors = {:?}", divisors);
+                    // println!("after extending, divisors = {:?}", divisors);
 
                     partial_result += increment;
                 }
@@ -164,11 +164,11 @@ impl Expression {
         // i = 2:
         // e6b1e1ee4d722870e3861798c5af768517dd582d000000000000000000000000
         // 73d41b70735c412f11990e6662618c34ef3fa3d7000000000000000000000000
-        println!("last_outer_indices = {:?}", last_outer_indices);
+        // println!("last_outer_indices = {:?}", last_outer_indices);
         let (i, j) = last_outer_indices;
         let mut semi_result = trace_table(i, j) * partial_result;
         for divisor in &divisors {
-            println!("divisor = {:?}", divisor);
+            // println!("divisor = {:?}", divisor);
             semi_result /= divisor.clone();
         }
         result += semi_result;
