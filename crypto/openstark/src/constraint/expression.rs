@@ -89,6 +89,7 @@ impl Expression {
         let mut result = DensePolynomial::new(&[FieldElement::ZERO]);
         let mut partial_result = DensePolynomial::new(&[FieldElement::ZERO]);
         let mut last_outer_indices = (0, 0);
+        let mut divisors: BTreeSet<SparsePolynomial> = BTreeSet::new();
         for (i, (indices, coefficients)) in multinomial.0.iter().enumerate() {
             let numerator = SparsePolynomial::from(coefficients.numerator.clone());
             // println!("{:?}", indices.clone());
@@ -119,34 +120,58 @@ impl Expression {
                 }
                 2 => {
                     if indices[0] != last_outer_indices {
+                        // panic!();
                         println!("last_outer_indices = {:?}", last_outer_indices);
                         let (i, j) = last_outer_indices;
-                        result += trace_table(i, j) * partial_result;
+                        let mut semi_result = trace_table(i, j) * partial_result;
+                        for divisor in &divisors {
+                            semi_result /= divisor.clone();
+                        }
+                        result += semi_result;
 
                         partial_result = DensePolynomial::new(&[FieldElement::ZERO]);
                         last_outer_indices = indices[0];
+                        divisors.clear();
                     }
-
+                    // assert_eq!(indices[0], (0, 0));
+                    // assert_eq!(indices[1], (0, 0));
                     let (i, j) = indices[1];
                     let mut increment = trace_table(i, j);
                     mul_assign(&mut increment, numerator);
-                    for factor in coefficients.denominator.clone() {
-                        increment /= factor;
+
+                    for factor in coefficients.denominator.difference(&divisors) {
+                        // panic!();
+                        partial_result *= factor.clone();
                     }
+                    for factor in divisors.difference(&coefficients.denominator) {
+                        // panic!();
+                        increment *= factor.clone();
+                    }
+                    println!("divisors = {:?}", divisors);
+                    divisors.extend(coefficients.denominator.clone());
+                    println!("after extending, divisors = {:?}", divisors);
+
                     partial_result += increment;
                 }
                 _ => panic!(),
             }
-            if i == 2 {break;}
-            // 4d9d20486459abdbbe8203191f0140952ed332e5000000000000000000000000
-            // 4d9d20486459abdbbe8203191f0140952ed332e5000000000000000000000000
+            // if i == 2 {break;}
         }
         // bd3997ab0e0e4c33e39fbb9691a7af0436351386000000000000000000000000
         // 73d41b70735c412f11990e6662618c34ef3fa3d7000000000000000000000000
         // should be e6b1e1ee4d722870e3861798c5af768517dd582d000000000000000000000000
+
+        // i = 2:
+        // e6b1e1ee4d722870e3861798c5af768517dd582d000000000000000000000000
+        // 73d41b70735c412f11990e6662618c34ef3fa3d7000000000000000000000000
         println!("last_outer_indices = {:?}", last_outer_indices);
         let (i, j) = last_outer_indices;
-        result += trace_table(i, j) * partial_result;
+        let mut semi_result = trace_table(i, j) * partial_result;
+        for divisor in &divisors {
+            println!("divisor = {:?}", divisor);
+            semi_result /= divisor.clone();
+        }
+        result += semi_result;
         result
     }
 
