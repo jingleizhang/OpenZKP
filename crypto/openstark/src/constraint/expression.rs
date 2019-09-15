@@ -1,7 +1,9 @@
 use crate::{
-    constraint::fraction::{from, Fraction},
+    constraint::{
+        fraction::{from, Fraction},
+        trace_multinomial::TraceMultinomial,
+    },
     polynomial::{DensePolynomial, SparsePolynomial},
-    constraint::trace_multinomial::TraceMultinomial,
 };
 use primefield::FieldElement;
 use std::{
@@ -54,6 +56,14 @@ impl Term {
     }
 }
 
+fn mul_assign(p: &mut DensePolynomial, other_polynomial: SparsePolynomial) {
+    if other_polynomial.len() < 20 {
+        *p *= other_polynomial;
+    } else {
+        *p *= DensePolynomial::from(other_polynomial);
+    }
+}
+
 impl Expression {
     pub fn degree(&self, trace_length: usize) -> usize {
         match self {
@@ -77,35 +87,62 @@ impl Expression {
         let multinomial = TraceMultinomial::from(self.clone());
 
         let mut result = DensePolynomial::new(&[FieldElement::ZERO]);
-        for (indices, coefficients) in multinomial.0 {
-            let product = indices
-                .iter()
-                .fold(DensePolynomial::new(&[FieldElement::ONE]), |x, (i, j)| {
-                    x * trace_table(*i, *j)
-                });
-
+        let mut partial_result = DensePolynomial::new(&[FieldElement::ZERO]);
+        let mut last_outer_indices = (0, 0);
+        for (i, (indices, coefficients)) in multinomial.0.iter().enumerate() {
             let numerator = SparsePolynomial::from(coefficients.numerator.clone());
-            println!("{:?}", indices.clone());
-            println!("# numerator terms = {:?}", numerator.len());
-            println!("numerator degree = {:?}", numerator.degree());
-            println!(
-                "# of factors in denominator = {:?}",
-                coefficients.denominator.len()
-            );
-            println!("");
+            // println!("{:?}", indices.clone());
+            // println!("# numerator terms = {:?}", numerator.len());
+            // println!("numerator degree = {:?}", numerator.degree());
+            // println!(
+            //     "# of factors in denominator = {:?}",
+            //     coefficients.denominator.len()
+            // );
+            // println!("");
 
-            let mut increment = product;
-            if numerator.len() < 20 {
-                increment *= numerator;
-            } else {
-                increment *= DensePolynomial::from(numerator);
-            }
-            for factor in coefficients.denominator {
-                increment /= factor;
-            }
+            match indices.len() {
+                0 => {
+                    let mut increment = DensePolynomial::from(numerator);
+                    for factor in coefficients.denominator.clone() {
+                        increment /= factor;
+                    }
+                    result += increment;
+                }
+                1 => {
+                    let (i, j) = indices[0];
+                    let mut increment = trace_table(i, j);
+                    mul_assign(&mut increment, numerator);
+                    for factor in coefficients.denominator.clone() {
+                        increment /= factor;
+                    }
+                    result += increment;
+                }
+                2 => {
+                    if indices[0] != last_outer_indices {
+                        println!("last_outer_indices = {:?}", last_outer_indices);
+                        let (i, j) = last_outer_indices;
+                        result += trace_table(i, j) * partial_result;
 
-            result += increment;
+                        partial_result = DensePolynomial::new(&[FieldElement::ZERO]);
+                        last_outer_indices = indices[0];
+                    }
+
+                    let (i, j) = indices[1];
+                    let mut increment = trace_table(i, j);
+                    mul_assign(&mut increment, numerator);
+                    for factor in coefficients.denominator.clone() {
+                        increment /= factor;
+                    }
+                    partial_result += increment;
+                }
+                _ => panic!(),
+            }
+            if i == 3 {break;}
         }
+        // bd3997ab0e0e4c33e39fbb9691a7af0436351386000000000000000000000000
+        println!("last_outer_indices = {:?}", last_outer_indices);
+        let (i, j) = last_outer_indices;
+        result += trace_table(i, j) * partial_result;
         result
     }
 
