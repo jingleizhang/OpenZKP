@@ -142,6 +142,8 @@ impl Expression {
             // 4d9d20486459abdbbe8203191f0140952ed332e5000000000000000000000000
         }
         // bd3997ab0e0e4c33e39fbb9691a7af0436351386000000000000000000000000
+        // 73d41b70735c412f11990e6662618c34ef3fa3d7000000000000000000000000
+        // should be e6b1e1ee4d722870e3861798c5af768517dd582d000000000000000000000000
         println!("last_outer_indices = {:?}", last_outer_indices);
         let (i, j) = last_outer_indices;
         result += trace_table(i, j) * partial_result;
