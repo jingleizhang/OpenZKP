@@ -1,5 +1,12 @@
 use crate::{
-    constraint::constraint::Constraint,
+    constraint::{
+        constraint::Constraint,
+        expression::{
+            Expression,
+            Other::{Constant, PeriodicColumn, X},
+            Term::Trace,
+        },
+    },
     pedersen_merkle::{
         inputs::PublicInput,
         periodic_columns::{
@@ -7,11 +14,6 @@ use crate::{
         },
     },
     polynomial::{DensePolynomial, SparsePolynomial},
-    constraint::expression::Expression,
-    constraint::expression::Other::X,
-    constraint::expression::Other::PeriodicColumn,
-    constraint::expression::Other::Constant,
-    constraint::expression::Term::Trace,
 };
 use elliptic_curve::Affine;
 use primefield::FieldElement;
@@ -22,8 +24,6 @@ use u256::U256;
 // TODO: Naming
 #[allow(clippy::module_name_repetitions)]
 pub fn get_pedersen_merkle_constraints(public_input: &PublicInput) -> Vec<Constraint> {
-    println!("asdfasdfasdf");
-
     let path_length = public_input.path_length;
     let trace_length = path_length * 256;
     let root = public_input.root.clone();
@@ -31,7 +31,6 @@ pub fn get_pedersen_merkle_constraints(public_input: &PublicInput) -> Vec<Constr
     let field_element_bits = 252;
 
     let trace_generator = Constant(FieldElement::root(trace_length).unwrap());
-    println!("asdasdfasdffasdfasdf");
     let no_rows = Expression::from(1);
     let first_row = X - trace_generator.pow(0);
     let last_row = X - trace_generator.pow(trace_length - 1);
@@ -65,8 +64,6 @@ pub fn get_pedersen_merkle_constraints(public_input: &PublicInput) -> Vec<Constr
 
     let left_bit: Expression = Trace(0, 0) - Trace(0, 1) * Expression::from(2);
     let right_bit: Expression = Trace(4, 0) - Trace(4, 1) * Expression::from(2);
-
-    println!("asdfasdfasdf");
 
     vec![
         Constraint {
