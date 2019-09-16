@@ -32,9 +32,11 @@ impl AddAssign<&TraceExpression> for TraceExpression {
     }
 }
 
-impl SubAssign<&TraceExpression> for TraceExpression {
-    fn sub_assign(&mut self, other: &Self) {
-        *self += Self::Neg(Box::new(other.clone()));
+impl<T: Into<TraceExpression>> Sub<T> for TraceExpression {
+    type Output = Self;
+
+    fn sub(self, other: T) -> TraceExpression {
+        self + Self::Neg(Box::new(other.into()))
     }
 }
 
@@ -46,7 +48,6 @@ impl MulAssign<&TraceExpression> for TraceExpression {
 
 commutative_binop!(TraceExpression, Add, add, AddAssign, add_assign);
 commutative_binop!(TraceExpression, Mul, mul, MulAssign, mul_assign);
-noncommutative_binop!(TraceExpression, Sub, sub, SubAssign, sub_assign);
 
 impl Add<PolynomialExpression> for TraceExpression {
     type Output = Self;
@@ -107,14 +108,6 @@ impl Sub<TraceExpression> for isize {
 
     fn sub(self, other: TraceExpression) -> TraceExpression {
         TraceExpression::Neg(Box::new(other - TraceExpression::from(self)))
-    }
-}
-
-impl Sub<isize> for TraceExpression {
-    type Output = Self;
-
-    fn sub(self, other: isize) -> TraceExpression {
-        TraceExpression::Neg(Box::new(self - other))
     }
 }
 
