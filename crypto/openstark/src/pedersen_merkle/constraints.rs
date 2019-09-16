@@ -23,15 +23,16 @@ pub fn get_pedersen_merkle_constraints(public_input: &PublicInput) -> Vec<Constr
     let leaf = public_input.leaf.clone();
     let field_element_bits = 252;
 
-    let trace_generator = Constant(FieldElement::root(trace_length).unwrap());
-    let no_rows = Expression::from(1);
-    let first_row = X - trace_generator.pow(0);
-    let last_row = X - trace_generator.pow(trace_length - 1);
-    let every_row: Expression = X.pow(trace_length) - Expression::from(1);
-    let hash_end_rows = X.pow(path_length) - trace_generator.pow(path_length * (trace_length - 1));
+    let trace_generator = FieldElement::root(trace_length).unwrap();
+    let no_rows = Constant(1);
+    let first_row = X() - 1;
+    let last_row = X() - trace_generator.pow(trace_length - 1);
+    let every_row = X().pow(trace_length) - 1;
+    let hash_end_rows =
+        X().pow(path_length) - trace_generator.pow(path_length * (trace_length - 1));
     let field_element_end_rows =
-        X.pow(path_length) - trace_generator.pow(path_length * field_element_bits);
-    let hash_start_rows: Expression = X.pow(path_length) - Expression::from(1);
+        X().pow(path_length) - trace_generator.pow(path_length * field_element_bits);
+    let hash_start_rows = X().pow(path_length) - 1;
 
     let (shift_point_x, shift_point_y) = match SHIFT_POINT {
         Affine::Zero => panic!(),
@@ -100,13 +101,13 @@ pub fn get_pedersen_merkle_constraints(public_input: &PublicInput) -> Vec<Constr
             denominator: no_rows.clone(),
         },
         Constraint {
-            base:        (Constant(leaf.clone()) - Trace(0, 0))
-                * (Constant(leaf.clone()) - Trace(4, 0)),
+            base:        (Expression::from(&leaf) - Trace(0, 0))
+                * (Expression::from(&leaf) - Trace(4, 0)),
             numerator:   no_rows.clone(),
             denominator: first_row.clone(),
         },
         Constraint {
-            base:        Constant(root) - Trace(6, 0),
+            base:        Expression::from(&root) - Trace(6, 0),
             numerator:   no_rows.clone(),
             denominator: last_row.clone(),
         },
@@ -116,12 +117,12 @@ pub fn get_pedersen_merkle_constraints(public_input: &PublicInput) -> Vec<Constr
             denominator: hash_end_rows.clone(),
         },
         Constraint {
-            base:        Trace(6, 0) - Constant(shift_point_x),
+            base:        Trace(6, 0) - Expression::from(&shift_point_x),
             numerator:   no_rows.clone(),
             denominator: hash_start_rows.clone(),
         },
         Constraint {
-            base:        Trace(7, 0) - Constant(shift_point_y),
+            base:        Trace(7, 0) - Expression::from(&shift_point_y),
             numerator:   no_rows.clone(),
             denominator: hash_start_rows.clone(),
         },
@@ -149,14 +150,12 @@ pub fn get_pedersen_merkle_constraints(public_input: &PublicInput) -> Vec<Constr
             denominator: every_row.clone(),
         },
         Constraint {
-            base:        (Constant(FieldElement::ONE) - left_bit.clone())
-                * (Trace(6, 0) - Trace(2, 1)),
+            base:        (Expression::from(1) - left_bit.clone()) * (Trace(6, 0) - Trace(2, 1)),
             numerator:   hash_end_rows.clone(),
             denominator: every_row.clone(),
         },
         Constraint {
-            base:        (Constant(FieldElement::ONE) - left_bit.clone())
-                * (Trace(7, 0) - Trace(3, 1)),
+            base:        (Expression::from(1) - left_bit.clone()) * (Trace(7, 0) - Trace(3, 1)),
             numerator:   hash_end_rows.clone(),
             denominator: every_row.clone(),
         },
@@ -194,14 +193,12 @@ pub fn get_pedersen_merkle_constraints(public_input: &PublicInput) -> Vec<Constr
             denominator: every_row.clone(),
         },
         Constraint {
-            base:        (Constant(FieldElement::ONE) - right_bit.clone())
-                * (Trace(2, 1) - Trace(6, 1)),
+            base:        (Expression::from(1) - right_bit.clone()) * (Trace(2, 1) - Trace(6, 1)),
             numerator:   hash_end_rows.clone(),
             denominator: every_row.clone(),
         },
         Constraint {
-            base:        (Constant(FieldElement::ONE) - right_bit.clone())
-                * (Trace(3, 1) - Trace(7, 1)),
+            base:        (Expression::from(1) - right_bit.clone()) * (Trace(3, 1) - Trace(7, 1)),
             numerator:   hash_end_rows.clone(),
             denominator: every_row.clone(),
         },

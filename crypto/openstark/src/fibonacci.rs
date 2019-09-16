@@ -64,13 +64,13 @@ pub fn get_fibonacci_constraints(public_input: &PublicInput) -> Vec<Constraint> 
     let claim_index = public_input.index;
     let claim_value = public_input.value.clone();
 
-    let trace_generator = Term::from(FieldElement::root(trace_length).unwrap());
+    let trace_generator = FieldElement::root(trace_length).unwrap();
 
-    let no_rows = Expression::from(1);
-    let first_row = X - trace_generator.pow(0);
-    let claim_row = X - trace_generator.pow(claim_index);
-    let last_row = X - trace_generator.pow(trace_length - 1);
-    let every_row: Expression = X.pow(trace_length) - Expression::from(1);
+    let no_rows = Constant(1);
+    let first_row = X() - trace_generator.pow(0);
+    let claim_row = X() - trace_generator.pow(claim_index);
+    let last_row = X() - trace_generator.pow(trace_length - 1);
+    let every_row = X().pow(trace_length) - 1;
 
     vec![
         Constraint {

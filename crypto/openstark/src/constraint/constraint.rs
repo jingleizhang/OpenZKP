@@ -1,23 +1,25 @@
 use crate::{
-    constraint::expression::{
-        self, Expression,
-        Other::{Constant, X},
+    constraint::{
+        expression::{
+            self, Expression,
+            Other::{Constant, X},
+        },
+        sparse_polynomial_expression::SparsePolynomialExpression,
     },
-    polynomial::SparsePolynomial,
+    polynomial::{DensePolynomial, SparsePolynomial},
 };
 use primefield::FieldElement;
-use std::prelude::v1::*;
+use std::{collections::BTreeMap, prelude::v1::*};
 
 pub struct Constraint {
     pub base:        Expression,
-    pub denominator: Expression,
-    pub numerator:   Expression,
+    pub denominator: SparsePolynomialExpression,
+    pub numerator:   SparsePolynomialExpression,
 }
 
 impl Constraint {
     pub fn degree(&self, trace_length: usize) -> usize {
-        self.base.degree(trace_length) + self.numerator.degree(trace_length)
-            - self.denominator.degree(trace_length)
+        self.base.degree(trace_length) + self.numerator.degree() - self.denominator.degree()
     }
 }
 
@@ -25,7 +27,7 @@ pub fn combine_constraints(
     constraints: &[Constraint],
     coefficients: &[FieldElement],
     trace_length: usize,
-) -> Expression {
+) -> GroupedConstraints {
     let max_degree: usize = constraints
         .iter()
         .map(|c| c.degree(trace_length))
@@ -33,24 +35,62 @@ pub fn combine_constraints(
         .unwrap();
     let result_degree = max_degree.next_power_of_two() - 1;
 
-    let mut result = Expression::from(0);
+    let mut result = GroupedConstraints::new();
     for (i, constraint) in constraints.iter().enumerate() {
         if i == 30 {
             break;
         }
-        let x =
-            constraint.base.clone() * constraint.numerator.clone() / constraint.denominator.clone();
+
         let degree_adjustment = X.pow(
-            result_degree + constraint.denominator.degree(trace_length)
+            result_degree + constraint.denominator.degree()
                 - constraint.base.degree(trace_length)
-                - constraint.numerator.degree(trace_length),
+                - constraint.numerator.degree(),
         );
 
-        result = result + Constant(coefficients[2 * i].clone()) * x.clone();
-        result = result + Constant(coefficients[2 * i + 1].clone()) * x * degree_adjustment;
+        result.insert(
+            (constraint.numerator.clone(), constraint.denominator.clone()),
+            Constant(coefficients[2 * i].clone()) * constraint.base.clone(),
+        );
+        result.insert(
+            (constraint.numerator.clone(), constraint.denominator.clone()),
+            Constant(coefficients[2 * i + 1].clone()) * constraint.base.clone() * degree_adjustment,
+        );
     }
-    debug_assert_eq!(result.degree(trace_length), result_degree);
+    // debug_assert_eq!(result.degree(trace_length), result_degree);
     result
+}
+
+pub struct GroupedConstraints(
+    BTreeMap<(SparsePolynomialExpression, SparsePolynomialExpression), Expression>,
+);
+
+impl GroupedConstraints {
+    pub fn new() -> Self {
+        Self(BTreeMap::new())
+    }
+
+    pub fn insert(
+        &mut self,
+        key: (SparsePolynomialExpression, SparsePolynomialExpression),
+        value: Expression,
+    ) {
+        *self.0.entry(key).or_insert(Expression::from(0)) += value;
+    }
+
+    pub fn eval_on_domain(
+        &self,
+        trace_table: &dyn Fn(usize, isize) -> DensePolynomial,
+    ) -> DensePolynomial {
+        DensePolynomial::new(&[FieldElement::ZERO])
+    }
+
+    pub fn eval(
+        &self,
+        trace_table: &dyn Fn(usize, isize) -> FieldElement,
+        x: &FieldElement,
+    ) -> FieldElement {
+        FieldElement::ZERO
+    }
 }
 
 // TODO: Show expression

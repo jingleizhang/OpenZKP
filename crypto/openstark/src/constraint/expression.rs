@@ -9,7 +9,7 @@ use primefield::FieldElement;
 use std::{
     cmp::max,
     collections::BTreeSet,
-    ops::{Add, Div, Mul, Sub},
+    ops::{Add, AddAssign, Div, Mul, Sub},
 };
 
 enum PolynomialExpression {
@@ -86,8 +86,8 @@ fn mul_assign(p: &mut DensePolynomial, other_polynomial: SparsePolynomial) {
     }
 }
 
-// struct GroupedExpression(BTreeStruct<(SparsePolynomial, SparsePolynomial), TraceExpression>);
-// impl GroupedExpression {
+// struct GroupedExpression(BTreeStruct<(SparsePolynomial, SparsePolynomial),
+// TraceExpression>); impl GroupedExpression {
 //     fn from_constraints(constraints: &[Constraint]) -> Self {
 //         let mut map = BTreeMap::new();
 //         for constraint in constraints {
@@ -289,6 +289,12 @@ impl Add for Expression {
 
     fn add(self, other: Self) -> Self {
         Expression::Operation(Operation::Add(Box::new(self), Box::new(other)))
+    }
+}
+
+impl AddAssign for Expression {
+    fn add_assign(&mut self, other: Self) {
+        *self = Expression::Operation(Operation::Add(Box::new(self.clone()), Box::new(other)));
     }
 }
 
