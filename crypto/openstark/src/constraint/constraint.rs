@@ -1,7 +1,7 @@
 use crate::{
     constraint::{
-        expression::TraceExpression,
-        sparse_polynomial_expression::PolynomialExpression::{self, Constant, X},
+        trace_expression::TraceExpression,
+        polynomial_expression::PolynomialExpression::{self, Constant, X},
     },
     polynomial::{DensePolynomial, SparsePolynomial},
 };
