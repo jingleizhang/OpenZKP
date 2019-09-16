@@ -1,70 +1,69 @@
-use crate::{
-    constraint::{
-        fraction::{from, Fraction},
-        trace_multinomial::TraceMultinomial,
-    },
-    polynomial::{DensePolynomial, SparsePolynomial},
-};
+use crate::polynomial::{DensePolynomial, SparsePolynomial};
 use core::cmp::Ordering;
 use lazy_static::*;
 use primefield::FieldElement;
 use std::{
     cmp::{max, Ord},
     collections::BTreeSet,
-    ops::{Add, Div, Mul, Sub},
+    ops::{Add, AddAssign, Mul, MulAssign, Sub, SubAssign},
 };
+use u256::{commutative_binop, noncommutative_binop};
 
-#[derive(Clone, Debug, PartialEq, Eq, PartialOrd)]
-pub struct SparsePolynomialExpression(SparsePolynomial);
-
-pub fn X() -> SparsePolynomialExpression {
-    SparsePolynomialExpression(SparsePolynomial::new(&[(FieldElement::ONE, 1)]))
+#[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord)]
+pub enum PolynomialExpression {
+    X,
+    Constant(FieldElement),
+    PeriodicColumn(SparsePolynomial),
+    Pow(Box<PolynomialExpression>, usize),
+    Neg(Box<PolynomialExpression>),
+    Add(Box<PolynomialExpression>, Box<PolynomialExpression>),
+    Mul(Box<PolynomialExpression>, Box<PolynomialExpression>),
 }
 
-pub fn Constant(x: isize) -> SparsePolynomialExpression {
-    SparsePolynomialExpression(SparsePolynomial::new(&[(x.into(), 0)]))
-}
-
-pub fn PeriodicColumn(p: SparsePolynomial) -> SparsePolynomialExpression {
-    SparsePolynomialExpression(p.clone())
-}
-
-impl SparsePolynomialExpression {
-    pub fn pow(&self, n: usize) -> Self {
-        SparsePolynomialExpression(self.0.pow(n))
+impl PolynomialExpression {
+    pub fn pow(&self, exponent: usize) -> Self {
+        Self::Pow(Box::new(self.clone()), exponent)
     }
 
     pub fn degree(&self) -> usize {
-        self.0.degree()
+        0
     }
 }
 
-impl Ord for SparsePolynomialExpression {
-    fn cmp(&self, other: &Self) -> Ordering {
-        self.degree().cmp(&other.degree())
+impl AddAssign<&PolynomialExpression> for PolynomialExpression {
+    fn add_assign(&mut self, other: &Self) {
+        *self = Self::Add(Box::new(self.clone()), Box::new(other.clone()));
     }
 }
 
-impl Sub for SparsePolynomialExpression {
-    type Output = Self;
-
-    fn sub(self, other: Self) -> Self {
-        SparsePolynomialExpression(self.0 - other.0)
+impl SubAssign<&PolynomialExpression> for PolynomialExpression {
+    fn sub_assign(&mut self, other: &Self) {
+        *self += Self::Neg(Box::new(other.clone()));
     }
 }
 
-impl Sub<FieldElement> for SparsePolynomialExpression {
+impl MulAssign<&PolynomialExpression> for PolynomialExpression {
+    fn mul_assign(&mut self, other: &Self) {
+        *self = Self::Mul(Box::new(self.clone()), Box::new(other.clone()));
+    }
+}
+
+commutative_binop!(PolynomialExpression, Add, add, AddAssign, add_assign);
+commutative_binop!(PolynomialExpression, Mul, mul, MulAssign, mul_assign);
+noncommutative_binop!(PolynomialExpression, Sub, sub, SubAssign, sub_assign);
+
+impl Sub<FieldElement> for PolynomialExpression {
     type Output = Self;
 
     fn sub(self, other: FieldElement) -> Self {
-        self - SparsePolynomialExpression(SparsePolynomial::new(&[(other, 0)]))
+        self - Self::Constant(other)
     }
 }
 
-impl Sub<isize> for SparsePolynomialExpression {
+impl Sub<isize> for PolynomialExpression {
     type Output = Self;
 
     fn sub(self, other: isize) -> Self {
-        self - Constant(other)
+        self - Self::Constant(other.into())
     }
 }

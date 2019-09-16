@@ -1,20 +1,19 @@
 use crate::{
     constraint::{
-        expression::{
-            self, Expression,
-            Other::{Constant, X},
-        },
-        sparse_polynomial_expression::SparsePolynomialExpression,
+        sparse_polynomial_expression::PolynomialExpression,
+        sparse_polynomial_expression::PolynomialExpression::X,
     },
     polynomial::{DensePolynomial, SparsePolynomial},
 };
+use crate::constraint::expression::TraceExpression;
+use crate::constraint::sparse_polynomial_expression::PolynomialExpression::Constant;
 use primefield::FieldElement;
 use std::{collections::BTreeMap, prelude::v1::*};
 
 pub struct Constraint {
-    pub base:        Expression,
-    pub denominator: SparsePolynomialExpression,
-    pub numerator:   SparsePolynomialExpression,
+    pub base:        TraceExpression,
+    pub denominator: PolynomialExpression,
+    pub numerator:   PolynomialExpression,
 }
 
 impl Constraint {
@@ -61,7 +60,7 @@ pub fn combine_constraints(
 }
 
 pub struct GroupedConstraints(
-    BTreeMap<(SparsePolynomialExpression, SparsePolynomialExpression), Expression>,
+    BTreeMap<(PolynomialExpression, PolynomialExpression), TraceExpression>,
 );
 
 impl GroupedConstraints {
@@ -69,12 +68,8 @@ impl GroupedConstraints {
         Self(BTreeMap::new())
     }
 
-    pub fn insert(
-        &mut self,
-        key: (SparsePolynomialExpression, SparsePolynomialExpression),
-        value: Expression,
-    ) {
-        *self.0.entry(key).or_insert(Expression::from(0)) += value;
+    pub fn insert(&mut self, key: (PolynomialExpression, PolynomialExpression), value: TraceExpression) {
+        *self.0.entry(key).or_insert(TraceExpression::from(0)) += value;
     }
 
     pub fn eval_on_domain(

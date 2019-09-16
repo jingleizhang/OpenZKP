@@ -1,6 +1,6 @@
 use crate::{
     channel::*,
-    constraint::{Constant, Constraint, Expression, Term, Trace, X},
+    constraint::{Constant, Constraint, Trace, X},
     polynomial::SparsePolynomial,
 };
 use primefield::FieldElement;
@@ -66,11 +66,11 @@ pub fn get_fibonacci_constraints(public_input: &PublicInput) -> Vec<Constraint> 
 
     let trace_generator = FieldElement::root(trace_length).unwrap();
 
-    let no_rows = Constant(1);
-    let first_row = X() - trace_generator.pow(0);
-    let claim_row = X() - trace_generator.pow(claim_index);
-    let last_row = X() - trace_generator.pow(trace_length - 1);
-    let every_row = X().pow(trace_length) - 1;
+    let no_rows = Constant(1.into());
+    let first_row = X - trace_generator.pow(0);
+    let claim_row = X - trace_generator.pow(claim_index);
+    let last_row = X - trace_generator.pow(trace_length - 1);
+    let every_row = X.pow(trace_length) - 1;
 
     vec![
         Constraint {
@@ -84,12 +84,12 @@ pub fn get_fibonacci_constraints(public_input: &PublicInput) -> Vec<Constraint> 
             denominator: every_row.clone(),
         },
         Constraint {
-            base:        Trace(0, 0) - Expression::from(1),
+            base:        Trace(0, 0) - 1,
             numerator:   no_rows.clone(),
             denominator: first_row,
         },
         Constraint {
-            base:        Trace(0, 0) - Expression::from(&claim_value),
+            base:        Trace(0, 0) - claim_value,
             numerator:   no_rows,
             denominator: claim_row,
         },
