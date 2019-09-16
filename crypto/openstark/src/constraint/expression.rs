@@ -8,7 +8,6 @@ use std::{
     collections::BTreeSet,
     ops::{Add, AddAssign, Mul, MulAssign, Sub, SubAssign},
 };
-use u256::{commutative_binop, noncommutative_binop};
 
 #[derive(Clone, Debug)]
 pub enum TraceExpression {
@@ -26,9 +25,23 @@ impl TraceExpression {
     }
 }
 
-impl AddAssign<&TraceExpression> for TraceExpression {
-    fn add_assign(&mut self, other: &Self) {
-        *self = Self::Add(Box::new(self.clone()), Box::new(other.clone()));
+impl From<PolynomialExpression> for TraceExpression {
+    fn from(p: PolynomialExpression) -> Self {
+        Self::PolynomialExpression(p)
+    }
+}
+
+impl From<isize> for TraceExpression {
+    fn from(i: isize) -> Self {
+        TraceExpression::PolynomialExpression(PolynomialExpression::Constant(i.into()))
+    }
+}
+
+impl<T: Into<TraceExpression>> Add<T> for TraceExpression {
+    type Output = Self;
+
+    fn add(self, other: T) -> TraceExpression {
+        Self::Add(Box::new(self.clone()), Box::new(other.into()))
     }
 }
 
@@ -40,36 +53,17 @@ impl<T: Into<TraceExpression>> Sub<T> for TraceExpression {
     }
 }
 
-impl MulAssign<&TraceExpression> for TraceExpression {
-    fn mul_assign(&mut self, other: &Self) {
-        *self = Self::Mul(Box::new(self.clone()), Box::new(other.clone()));
+impl<T: Into<TraceExpression>> Mul<T> for TraceExpression {
+    type Output = Self;
+
+    fn mul(self, other: T) -> TraceExpression {
+        Self::Mul(Box::new(self.clone()), Box::new(other.into()))
     }
 }
 
-commutative_binop!(TraceExpression, Add, add, AddAssign, add_assign);
-commutative_binop!(TraceExpression, Mul, mul, MulAssign, mul_assign);
-
-impl Add<PolynomialExpression> for TraceExpression {
-    type Output = Self;
-
-    fn add(self, other: PolynomialExpression) -> Self {
-        self + Self::PolynomialExpression(other)
-    }
-}
-
-impl Sub<PolynomialExpression> for TraceExpression {
-    type Output = Self;
-
-    fn sub(self, other: PolynomialExpression) -> Self {
-        self - Self::PolynomialExpression(other)
-    }
-}
-
-impl Mul<PolynomialExpression> for TraceExpression {
-    type Output = Self;
-
-    fn mul(self, other: PolynomialExpression) -> Self {
-        self * Self::PolynomialExpression(other)
+impl AddAssign<TraceExpression> for TraceExpression {
+    fn add_assign(&mut self, other: Self) {
+        *self = self.clone() + other.clone()
     }
 }
 
@@ -94,12 +88,6 @@ impl Sub<TraceExpression> for FieldElement {
 
     fn sub(self, other: TraceExpression) -> TraceExpression {
         TraceExpression::Neg(Box::new(other - self))
-    }
-}
-
-impl From<isize> for TraceExpression {
-    fn from(i: isize) -> Self {
-        TraceExpression::PolynomialExpression(PolynomialExpression::Constant(i.into()))
     }
 }
 
