@@ -31,9 +31,15 @@ impl From<PolynomialExpression> for TraceExpression {
     }
 }
 
+impl From<FieldElement> for TraceExpression {
+    fn from(x: FieldElement) -> Self {
+        TraceExpression::PolynomialExpression(PolynomialExpression::Constant(x))
+    }
+}
+
 impl From<isize> for TraceExpression {
     fn from(i: isize) -> Self {
-        TraceExpression::PolynomialExpression(PolynomialExpression::Constant(i.into()))
+        Self::from(i.into())
     }
 }
 
@@ -67,22 +73,6 @@ impl AddAssign<TraceExpression> for TraceExpression {
     }
 }
 
-impl Mul<TraceExpression> for PolynomialExpression {
-    type Output = TraceExpression;
-
-    fn mul(self, other: TraceExpression) -> TraceExpression {
-        other * self
-    }
-}
-
-impl Sub<FieldElement> for TraceExpression {
-    type Output = Self;
-
-    fn sub(self, other: FieldElement) -> Self {
-        self - PolynomialExpression::Constant(other)
-    }
-}
-
 impl Sub<TraceExpression> for FieldElement {
     type Output = TraceExpression;
 
@@ -96,6 +86,14 @@ impl Sub<TraceExpression> for isize {
 
     fn sub(self, other: TraceExpression) -> TraceExpression {
         TraceExpression::Neg(Box::new(other - TraceExpression::from(self)))
+    }
+}
+
+impl Mul<TraceExpression> for PolynomialExpression {
+    type Output = TraceExpression;
+
+    fn mul(self, other: TraceExpression) -> TraceExpression {
+        other * self
     }
 }
 
