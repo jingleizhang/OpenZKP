@@ -78,6 +78,8 @@ impl GroupedConstraints {
         &self,
         trace_table: &dyn Fn(usize, isize) -> DensePolynomial,
     ) -> DensePolynomial {
+
+        
         DensePolynomial::new(&[FieldElement::ZERO])
     }
 
