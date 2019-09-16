@@ -1,7 +1,5 @@
 use crate::{
-    constraint::{
-        sparse_polynomial_expression::PolynomialExpression,
-    },
+    constraint::sparse_polynomial_expression::PolynomialExpression,
     polynomial::{DensePolynomial, SparsePolynomial},
 };
 use primefield::FieldElement;
