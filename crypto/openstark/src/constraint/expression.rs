@@ -86,6 +86,18 @@ fn mul_assign(p: &mut DensePolynomial, other_polynomial: SparsePolynomial) {
     }
 }
 
+// struct GroupedExpression(BTreeStruct<(SparsePolynomial, SparsePolynomial), TraceExpression>);
+// impl GroupedExpression {
+//     fn from_constraints(constraints: &[Constraint]) -> Self {
+//         let mut map = BTreeMap::new();
+//         for constraint in constraints {
+//             map.entry((constraint.numerator, constraint.denominator))
+//                 .or_insert(TraceExpression::ZERO) += constraint.base;
+//         }
+//         Self(map)
+//     }
+// }
+
 impl Expression {
     pub fn degree(&self, trace_length: usize) -> usize {
         match self {
