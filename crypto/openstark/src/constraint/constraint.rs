@@ -1,7 +1,7 @@
 use crate::{
     constraint::{
-        trace_expression::TraceExpression,
         polynomial_expression::PolynomialExpression::{self, Constant, X},
+        trace_expression::TraceExpression,
     },
     polynomial::{DensePolynomial, SparsePolynomial},
 };
@@ -34,10 +34,6 @@ pub fn combine_constraints(
 
     let mut result = GroupedConstraints::new();
     for (i, constraint) in constraints.iter().enumerate() {
-        if i == 30 {
-            break;
-        }
-
         let degree_adjustment = X.pow(
             result_degree + constraint.denominator.degree()
                 - constraint.base.degree(trace_length)
@@ -46,14 +42,13 @@ pub fn combine_constraints(
 
         result.insert(
             (constraint.numerator.clone(), constraint.denominator.clone()),
-            Constant(coefficients[2 * i].clone()) * constraint.base.clone(),
+            constraint.base.clone() * coefficients[2 * i].clone(),
         );
         result.insert(
             (constraint.numerator.clone(), constraint.denominator.clone()),
-            Constant(coefficients[2 * i + 1].clone()) * constraint.base.clone() * degree_adjustment,
+            constraint.base.clone() * degree_adjustment * coefficients[2 * i + 1].clone(),
         );
     }
-    // debug_assert_eq!(result.degree(trace_length), result_degree);
     result
 }
 
@@ -78,9 +73,16 @@ impl GroupedConstraints {
         &self,
         trace_table: &dyn Fn(usize, isize) -> DensePolynomial,
     ) -> DensePolynomial {
-
-        
-        DensePolynomial::new(&[FieldElement::ZERO])
+        let mut result = DensePolynomial::new(&[FieldElement::ZERO]);
+        for ((numerator, denominator), base) in &self.0 {
+            let mut increment: DensePolynomial = base.evaluate_for_dense(trace_table);
+            // It's possible that not all the terms are needed in this multiplication,
+            // because...?
+            increment *= SparsePolynomial::from(numerator.clone());
+            increment /= SparsePolynomial::from(denominator.clone());
+            result += increment;
+        }
+        result
     }
 
     pub fn eval(
@@ -88,7 +90,14 @@ impl GroupedConstraints {
         trace_table: &dyn Fn(usize, isize) -> FieldElement,
         x: &FieldElement,
     ) -> FieldElement {
-        FieldElement::ZERO
+        let mut result = FieldElement::ZERO;
+        for ((numerator, denominator), base) in &self.0 {
+            let mut increment: FieldElement = base.evaluate_for_element(trace_table, x);
+            increment *= SparsePolynomial::from(numerator.clone()).evaluate(x);
+            increment /= SparsePolynomial::from(denominator.clone()).evaluate(x);
+            result += increment;
+        }
+        result
     }
 }
 

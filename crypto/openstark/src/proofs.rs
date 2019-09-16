@@ -712,12 +712,12 @@ mod tests {
             hex!("b7d80385fa0c8879473cdf987ea7970bb807aec78bb91af39a1504d965ad8e92")
         );
 
-        // let mut constraint_coefficients = vec![FieldElement::ZERO; 2 *
-        // constraints.len()]; constraint_coefficients[0] = FieldElement::ONE;
+        // let mut constraint_coefficients = vec![FieldElement::ZERO; 2 * constraints.len()];
+        // constraint_coefficients[0] = FieldElement::ONE;
         // constraint_coefficients[1] = FieldElement::ONE;
         // constraint_coefficients[2] = FieldElement::ONE;
         // constraint_coefficients[3] = FieldElement::ONE;
-
+        //
         let mut constraint_coefficients: Vec<FieldElement> =
             Vec::with_capacity(2 * constraints.len());
         for _ in &constraints {
@@ -733,7 +733,7 @@ mod tests {
         );
         // assert!(false);
         assert_eq!(constraint_polynomials.len(), 1);
-        assert_eq!(constraint_polynomials[0].len(), 1024);
+        // assert_eq!(constraint_polynomials[0].len(), 1024);
         let CC = PolyLDE(
             constraint_polynomials
                 .par_iter()

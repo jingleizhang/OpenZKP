@@ -55,8 +55,8 @@ pub fn get_pedersen_merkle_constraints(public_input: &PublicInput) -> Vec<Constr
         path_length,
     ));
 
-    let left_bit = Trace(0, 0) - 2 * Trace(0, 1);
-    let right_bit = Trace(4, 0) - 2 * Trace(4, 1);
+    let left_bit = Trace(0, 0) - Trace(0, 1) * 2;
+    let right_bit = Trace(4, 0) - Trace(4, 1) * 2;
 
     vec![
         Constraint {
