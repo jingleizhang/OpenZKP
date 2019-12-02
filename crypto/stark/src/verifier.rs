@@ -3,7 +3,7 @@ use crate::{
 };
 #[cfg(feature = "std")]
 use std::error;
-use std::{collections::BTreeMap, convert::TryInto, fmt, prelude::v1::*};
+use std::{collections::BTreeMap, fmt, prelude::v1::*};
 use zkp_hash::Hash;
 use zkp_merkle_tree::{Commitment, Error as MerkleError, Proof as MerkleProof};
 use zkp_primefield::{fft, geometric_series::root_series, FieldElement};
@@ -183,7 +183,8 @@ pub fn verify(constraints: &Constraints, proof: &Proof) -> Result<()> {
     // TODO: Make it work as channel.read()
     let low_degree_extension_root = Replayable::<Hash>::replay(&mut channel);
     let lde_commitment = Commitment::from_size_hash(eval_domain_size, &low_degree_extension_root)?;
-    let mut constraint_coefficients: Vec<FieldElement> = Vec::with_capacity(2 * constraints.len());
+    let mut constraint_coefficients: Vec<FieldElement> =
+        Vec::with_capacity(constraints.trace_arguments().len());
     for _ in 0..constraints.len() {
         constraint_coefficients.push(channel.get_random());
         constraint_coefficients.push(channel.get_random());
@@ -194,13 +195,14 @@ pub fn verify(constraints: &Constraints, proof: &Proof) -> Result<()> {
 
     // Get the oods information from the proof and random
     let oods_point: FieldElement = channel.get_random();
-    let mut oods_values: Vec<FieldElement> = Vec::with_capacity(2 * trace_cols + 1);
-    let constraints_trace_degree = constraints.degree();
-    for _ in 0..(2 * trace_cols + constraints_trace_degree) {
+    let constraints_trace_degree = constraints.degree().next_power_of_two();
+    let mut oods_values: Vec<FieldElement> =
+        Vec::with_capacity(constraints.trace_arguments().len() + constraints_trace_degree);
+    for _ in 0..(constraints.trace_arguments().len() + constraints_trace_degree) {
         oods_values.push(Replayable::<FieldElement>::replay(&mut channel));
     }
-    let mut oods_coefficients: Vec<FieldElement> = Vec::with_capacity(2 * trace_cols + 1);
-    for _ in 0..2 * trace_cols + constraints_trace_degree {
+    let mut oods_coefficients: Vec<FieldElement> = Vec::with_capacity(oods_values.len());
+    for _ in &oods_values {
         oods_coefficients.push(channel.get_random());
     }
 
@@ -323,6 +325,7 @@ pub fn verify(constraints: &Constraints, proof: &Proof) -> Result<()> {
                             oods_coefficients.as_slice(),
                             eval_domain_size,
                             constraints.blowup,
+                            &constraints.trace_arguments(),
                         )?);
                     }
                 } else {
@@ -390,11 +393,21 @@ pub fn verify(constraints: &Constraints, proof: &Proof) -> Result<()> {
         }
     }
 
-    let (trace_values, constraint_values) = oods_values.split_at(2 * trace_cols);
+    let trace_arguments = constraints.trace_arguments();
+
+    let (trace_values, constraint_values) = oods_values.split_at(trace_arguments.len());
+
+    assert_eq!(trace_values.len(), trace_arguments.len());
+
+    let mut trace_map = BTreeMap::new();
+    for (argument, value) in trace_arguments.iter().zip(trace_values) {
+        let _ = trace_map.insert(*argument, value.clone());
+    }
+
     if oods_value_from_trace_values(
         &constraints,
         &constraint_coefficients,
-        &trace_values,
+        &trace_map,
         &oods_point,
     ) != oods_value_from_constraint_values(&constraint_values, &oods_point)
     {
@@ -406,14 +419,10 @@ pub fn verify(constraints: &Constraints, proof: &Proof) -> Result<()> {
 fn oods_value_from_trace_values(
     constraints: &Constraints,
     coefficients: &[FieldElement],
-    trace_values: &[FieldElement],
+    trace_values: &BTreeMap<(usize, isize), FieldElement>,
     oods_point: &FieldElement,
 ) -> FieldElement {
-    let trace = |i: usize, j: isize| {
-        let j: usize = j.try_into().unwrap();
-        assert!(j == 0 || j == 1);
-        trace_values[2 * i + j].clone()
-    };
+    let trace = |i: usize, j: isize| trace_values.get(&(i, j)).unwrap().clone();
     constraints
         .combine(coefficients)
         .evaluate(oods_point, &trace)
@@ -483,7 +492,6 @@ fn fri_single_fold(
     (poly_at_x + poly_at_neg_x) + eval_point / x * (poly_at_x - poly_at_neg_x)
 }
 
-// TODO - Make sure this is general
 #[allow(clippy::too_many_arguments)]
 fn out_of_domain_element(
     poly_points_u: &[U256],
@@ -494,6 +502,7 @@ fn out_of_domain_element(
     oods_coefficients: &[FieldElement],
     eval_domain_size: usize,
     blowup: usize,
+    trace_arguments: &[(usize, isize)],
 ) -> Result<FieldElement> {
     let poly_points: Vec<FieldElement> = poly_points_u
         .iter()
@@ -507,15 +516,17 @@ fn out_of_domain_element(
     let g = omega.pow(blowup);
     let mut r = FieldElement::ZERO;
 
-    for x in 0..poly_points.len() {
-        r += &oods_coefficients[2 * x] * (&poly_points[x] - &oods_values[2 * x])
-            / (&x_transform - oods_point);
-        r += &oods_coefficients[2 * x + 1] * (&poly_points[x] - &oods_values[2 * x + 1])
-            / (&x_transform - &g * oods_point);
+    for ((coefficient, value), (i, j)) in oods_coefficients
+        .iter()
+        .zip(oods_values)
+        .zip(trace_arguments)
+    {
+        r += coefficient * (&poly_points[*i] - value) / (&x_transform - g.pow(*j) * oods_point);
     }
+
     for (i, constraint_oods_value) in constraint_oods_values.iter().enumerate() {
-        r += &oods_coefficients[2 * poly_points.len() + i]
-            * (constraint_oods_value - &oods_values[poly_points.len() * 2 + i])
+        r += &oods_coefficients[trace_arguments.len() + i]
+            * (constraint_oods_value - &oods_values[trace_arguments.len() + i])
             / (&x_transform - oods_point.pow(constraint_oods_values.len()));
     }
     Ok(r)
@@ -536,28 +547,32 @@ mod tests {
     use super::*;
     use crate::{
         prove,
-        traits::tests::{Claim, Witness},
+        traits::tests::{Recurrance, Recurrance2},
         Provable, Verifiable,
     };
-    use zkp_macros_decl::u256h;
+    use quickcheck_macros::quickcheck;
 
-    #[test]
-    fn verifier_fib_test() {
-        let public = Claim {
-            index: 1000,
-            value: FieldElement::from(u256h!(
-                "0142c45e5d743d10eae7ebb70f1526c65de7dbcdb65b322b6ddc36a812591e8f"
-            )),
-        };
-        let private = Witness {
-            secret: FieldElement::from(u256h!(
-                "00000000000000000000000000000000000000000000000000000000cafebabe"
-            )),
-        };
+    #[quickcheck]
+    #[allow(clippy::needless_pass_by_value)] // Cleaner than adding lifetime annotations.
+    fn verify_recurrance(r: Recurrance) -> bool {
+        let public = r.claim();
+        let private = r.witness();
+
         let constraints = public.constraints();
         let trace = public.trace(&private);
-        let actual = prove(&constraints, &trace).unwrap();
 
-        assert!(verify(&constraints, &actual).is_ok());
+        verify(&constraints, &prove(&constraints, &trace).unwrap()).is_ok()
+    }
+
+    #[quickcheck]
+    #[allow(clippy::needless_pass_by_value)] // Cleaner than adding lifetime annotations.
+    fn verify_recurrance2(r: Recurrance2) -> bool {
+        let public = r.claim();
+        let private = r.witness();
+
+        let constraints = public.constraints();
+        let trace = public.trace(&private);
+
+        verify(&constraints, &prove(&constraints, &trace).unwrap()).is_ok()
     }
 }

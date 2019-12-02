@@ -69,7 +69,7 @@ fn main() {
 
     let claim = Claim {
         index: 1_000_000,
-        value: field_element!("cafebabe"),
+        value: field_element!("02bcd597f68583c9c818cf260a35a64c09bbac70e485a0f857ba042808bff531"),
     };
     let witness = Witness {
         secret: field_element!("deadbeef"),
@@ -78,6 +78,7 @@ fn main() {
     let start = Instant::now();
     let constraints = claim.constraints();
     let trace = claim.trace(&witness);
+    // assert_eq!(claim.check(&witness), Ok(()));
     let proof = prove(&constraints, &trace).expect("Proof failed");
     let duration = start.elapsed();
     println!("Time elapsed in proof function is: {:?}", duration);

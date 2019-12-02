@@ -1,6 +1,6 @@
 use crate::rational_expression::RationalExpression;
 use itertools::Itertools;
-use std::{fmt, prelude::v1::*};
+use std::{collections::BTreeSet, fmt, prelude::v1::*};
 use zkp_primefield::FieldElement;
 
 #[derive(Clone, Debug)]
@@ -94,7 +94,7 @@ impl Constraints {
         // TODO: Validate expressions
         // TODO: Hash expressions into channel seed
         // TODO - Examine if we want to up these security params further.
-        // 15*4 + 30 queries = 90
+        // 22.5*4  + 0 queries = 90
         // TODO: Sensible default for pow_bits. For small proofs it should be small.
         Ok(Self {
             channel_seed,
@@ -102,8 +102,8 @@ impl Constraints {
             trace_ncolumns,
             expressions,
             blowup: 16,
-            pow_bits: if cfg!(test) { 12 } else { 20 },
-            num_queries: 30,
+            pow_bits: 0,
+            num_queries: 45,
             fri_layout: Self::default_fri_layout(trace_nrows),
         })
     }
@@ -181,7 +181,7 @@ impl Constraints {
         32 * total_decommitment
     }
 
-    pub(crate) fn combine(&self, constraint_coefficients: &[FieldElement]) -> RationalExpression {
+    pub fn combine(&self, constraint_coefficients: &[FieldElement]) -> RationalExpression {
         use RationalExpression::*;
         assert_eq!(2 * self.len(), constraint_coefficients.len());
         let target_degree = self.degree() * self.trace_nrows() - 1;
@@ -200,30 +200,33 @@ impl Constraints {
             )
             .sum()
     }
+
+    pub fn trace_arguments(&self) -> Vec<(usize, isize)> {
+        self.expressions
+            .iter()
+            .map(RationalExpression::trace_arguments)
+            .fold(BTreeSet::new(), |x, y| &x | &y)
+            .into_iter()
+            .collect()
+    }
 }
 
 #[cfg(test)]
 mod tests {
-    use crate::{
-        prove,
-        traits::tests::{Claim, Witness},
-        Provable, Verifiable,
-    };
+    use crate::{prove, traits::tests::Recurrance, Provable, Verifiable};
     use zkp_macros_decl::field_element;
     use zkp_primefield::FieldElement;
     use zkp_u256::U256;
 
     #[test]
     fn size_estimate_test() {
-        let private = Witness {
-            secret: field_element!("0f00dbabe0cafebabe"),
+        let recurrance = Recurrance {
+            index:         4000,
+            initial_value: field_element!("0f00dbabe0cafebabe"),
+            exponent:      1,
         };
-        let public = Claim {
-            index: 4000,
-            value: field_element!(
-                "0576d0c2cc9a060990e96752034a391f0b9036aaa32a3aab28796f7845450e18"
-            ),
-        };
+        let private = recurrance.witness();
+        let public = recurrance.claim();
 
         let mut constraints = public.constraints();
         constraints.blowup = 16;
